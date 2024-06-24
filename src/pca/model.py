@@ -10,3 +10,4 @@ class PCA:
 
     def generation(self: 'Kmeans') -> None:
         pass
+
