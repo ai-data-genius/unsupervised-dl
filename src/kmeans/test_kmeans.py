@@ -28,5 +28,4 @@ kmeans.lloyd(X)
 kmeans.plot_clusters(X)
 
 
-dataset = mnistData()
 

@@ -2,6 +2,8 @@ import numpy as np
 import tensorflow as tf
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
+from tqdm import tqdm
+import logging
 
 class kmeans:
     def __init__(self, n_clusters, max_iter=1000):
@@ -27,12 +29,13 @@ class kmeans:
         while np.linalg.norm(centroids - centroids_old) > tol:
             centroids_old = centroids.copy()
 
+
             # assign each point to the closest centroid
-            for i in range(n_samples):
+            for i in tqdm(range(n_samples)):
                 membership[i] = np.argmin(np.linalg.norm(X[i] - centroids, axis=1))
 
             # update the centroids
-            for i in range(self.n_clusters):
+            for i in tqdm(range(self.n_clusters)):
                 centroids[i] = np.mean(X[membership == i], axis=0)
 
         self.centroids = centroids
