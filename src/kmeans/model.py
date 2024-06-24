@@ -9,32 +9,34 @@ class kmeans:
         self.max_iter = max_iter
         self.membership = None
 
-    def lloyd(self, X):
+
+
+    def lloyd(self, X, tol=1e-6):
         n_samples = X.shape[0]
         n_features = X.shape[1]
 
-        #initialize the centroids by copying random points from the data
+        # initialize the centroids by copying random points from the data
         centroids = np.array([X[i] for i in np.random.choice(n_samples, self.n_clusters, replace=False)], copy=True)
+        centroids_old = np.zeros((self.n_clusters, n_features))
 
-        print(centroids)
 
-        #initialize the membership vector
+        # initialize the membership vector
         membership = np.zeros(n_samples)
 
-        for i in range(self.max_iter):
-            #assign the points to the closest cluster centroid by computing the Euclidean distance
-            for j in range(n_samples):
-                membership[j] = np.argmin([np.linalg.norm(X[j] - c) for c in centroids])
+        # tol = 1e-4 Relative tolerance with regards to Frobenius norm of the difference in the cluster centers of two consecutive iterations to declare convergence.
+        while np.linalg.norm(centroids - centroids_old) > tol:
+            centroids_old = centroids.copy()
 
-            #update the centroids
-            for j in range(self.n_clusters):
-                centroids[j] = np.mean(X[membership == j], axis=0)
+            # assign each point to the closest centroid
+            for i in range(n_samples):
+                membership[i] = np.argmin(np.linalg.norm(X[i] - centroids, axis=1))
+
+            # update the centroids
+            for i in range(self.n_clusters):
+                centroids[i] = np.mean(X[membership == i], axis=0)
 
         self.centroids = centroids
         self.membership = membership
-
-
-        return centroids
 
     def plot_clusters(self, X):
         plt.scatter(X[:, 0], X[:, 1], c=self.membership)
