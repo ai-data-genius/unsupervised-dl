@@ -1,26 +1,15 @@
 from kmeans.model import kmeans
+from dataset.dataset_mnist import mnistData
 import matplotlib.pyplot as plt
 import numpy as np
 
 if __name__ == "__main__":
 
-    np.random.seed(np.random.randint(100))
-    n_samples = 1000
-    n_clusters = 3
-
-    X = np.random.randn(n_samples, 2)
-    X[:300] += 5
-    X[300:600] += 10
-    X[600:] += 15
-
-    plt.scatter(X[:, 0], X[:, 1])
-    plt.show()
-
-    print(X.shape)
-
+    mnist = mnistData()
+    X = mnist.getTrainX()
 
     #initialize the model
-    kmeans = kmeans(n_clusters)
+    kmeans = kmeans(10)
     kmeans.lloyd(X)
 
     #plot the clusters
