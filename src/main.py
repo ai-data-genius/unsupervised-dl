@@ -1,4 +1,4 @@
-from kmeans.model import kmeans
+from kmeans.model import KMeans
 from dataset.dataset_mnist import mnistData
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,7 +9,7 @@ if __name__ == "__main__":
     X = mnist.getTrainX()
 
     #initialize the model
-    kmeans = kmeans(10)
+    kmeans = KMeans(10, max_iter=20)
     kmeans.lloyd(X)
 
     #plot the clusters
