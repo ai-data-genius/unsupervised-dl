@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class AE:
+
     def __init__(self, encoding_dim, input_shape, output_shape):
         self.encoder = None
         self.encoding_dim = encoding_dim
@@ -18,22 +19,19 @@ class AE:
         self.encoder.add(layers.InputLayer(self.input_shape))
         self.encoder.add(layers.Flatten())
         self.encoder.add(layers.Dense(512))
-        self.encoder.add(layers.BatchNormalization())
-        self.encoder.add(layers.Activation('tanh'))
+        self.encoder.add(layers.Activation('relu'))
         self.encoder.add(layers.Dense(256))
         self.encoder.add(layers.Activation('relu'))
         self.encoder.add(layers.Dense(128))
         self.encoder.add(layers.Activation('relu'))
         self.encoder.add(layers.Dense(32, activation="sigmoid"))
-        self.encoder.add(layers.BatchNormalization())
         self.encoder.add(layers.Dense(2, activation="sigmoid"))
 
 
         #sequential model #decoder
         self.decoder = keras.models.Sequential()
         self.decoder.add(layers.InputLayer((2,)))
-        self.decoder.add(layers.BatchNormalization())
-        self.decoder.add(layers.Dense(32, activation="tanh"))
+        self.decoder.add(layers.Dense(32, activation="sigmoid"))
         self.decoder.add(layers.Dense(128))
         self.decoder.add(layers.Activation('relu'))
         self.decoder.add(layers.Dense(256))

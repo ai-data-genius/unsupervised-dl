@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class AE:
+
     def __init__(self, encoding_dim, input_shape, output_shape):
         self.encoder = None
         self.encoding_dim = encoding_dim

@@ -9,7 +9,7 @@ from kmeans.model import KMeans
 from pca.model import PCA
 
 
-def main():
+if __name__ == '__main__':
     mnist_dataset = mnistData()
     toy_dataset = toyData()
 
@@ -20,6 +20,7 @@ def main():
     Y_test = mnist_dataset.getTestY()
 
     model_choice = input("Enter the model to run ('kmeans', 'pca', 'autoencoder'): ").strip().lower()
+
 
     if model_choice == "kmeans":
         dataset_choice = input("Enter the dataset to run ('mnist' or 'toy'): ").strip().lower()
@@ -80,12 +81,13 @@ def main():
         X_test = mnist_dataset.getTestX()
         Y_test = mnist_dataset.getTestY()
         ae = AE(32, (784,), 784)
+
+
         ae.build()
         X_train, X_test = ae.standardize(X_train, X_test)
-        ae.fit(X_train, X_test, 20, 1028)
+        ae.fit(X_train, X_test, 100, 32)
+
         ae.projection(X_test, ae.autoencoder.predict(X_test))
     else:
-        print("Invalid model choice. Please enter 'kmeans' or 'pca'.")
+        print("Invalid model choice. Please enter 'kmeans' or 'pca' or 'autoencoder'.")
 
-if __name__ == "__main__":
-    main()
