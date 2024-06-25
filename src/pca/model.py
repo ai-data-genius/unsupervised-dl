@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 class PCA:
     def __init__(self, n_components=2):
@@ -57,6 +58,27 @@ class PCA:
         # Assigner chaque point à son cluster correspondant
         clusters = np.argmin(np.linalg.norm(X_reduced[:, np.newaxis] - self.cluster_centers_, axis=2), axis=1)
 
+        return clusters
+
+    def cluster_with_pca_toy(self, X_reduced, n_clusters, max_iter=100):
+        # Initialiser les centres de cluster aléatoirement parmi les points
+        np.random.seed(42)
+        initial_indices = np.random.choice(X_reduced.shape[0], n_clusters, replace=False)
+        cluster_centers = X_reduced[initial_indices]
+        clusters = np.zeros(X_reduced.shape[0])
+
+        for _ in tqdm(range(max_iter), desc="Running Manual Clustering"):
+            # Assigner chaque point au cluster le plus proche
+            distances = np.sqrt(((X_reduced[:, np.newaxis] - cluster_centers) ** 2).sum(axis=2))
+            clusters = np.argmin(distances, axis=1)
+
+            # Mettre à jour les centres de cluster
+            for i in range(n_clusters):
+                points_in_cluster = X_reduced[clusters == i]
+                if len(points_in_cluster) > 0:
+                    cluster_centers[i] = points_in_cluster.mean(axis=0)
+
+        self.cluster_centers_ = cluster_centers
         return clusters
     def visualize_clusters(self, X_reduced, clusters):
         plt.figure(figsize=(12, 8))

@@ -48,47 +48,86 @@ if __name__ == '__main__':
         # X_gen = kmeans.generate(steps=25)
 
     elif model_choice == "pca":
-        X_pca = X_train.reshape(X_train.shape[0], -1)  # (60000, 784)
-        # Determine the optimal number of components
-        optimal_components = PCA.determine_optimal_components(X_pca, variance_threshold=0.95)
-        print(f"Optimal number of components to retain 95% variance: {optimal_components}")
+        dataset_choice = input("Enter the dataset to run ('mnist' or 'toy'): ").strip().lower()
+        if dataset_choice == "toy":
 
-        # Use the optimal number of components for PCA
-        pcap = PCA(n_components=optimal_components)
+            # Réduire la dimensionnalité à 2 composantes principales
+            pcap = PCA(n_components=2)
 
-        # Apply PCA and compress data
-        X_reduced = pcap.compress(X_pca)
+            # Compression des données
+            X_toy_reduced = pcap.compress(X_toy)
 
-        # Decompress data
-        X_reconstructed = pcap.decompress(X_reduced)
+            # Décompression des données
+            X_toy_decompressed = pcap.decompress(X_toy_reduced)
 
-        # Affichage des images avant et après compression
-        fig, axes = plt.subplots(2, 10, figsize=(15, 4))
-        fig.suptitle('Images avant et après compression/décompression')
+            # Clustering
+            n_clusters = 3
+            clusters_original = pcap.cluster_with_pca_toy(X_toy, n_clusters)
+            clusters_reduced = pcap.cluster_with_pca_toy(X_toy_reduced, n_clusters)
+            clusters_decompressed = pcap.cluster_with_pca_toy(X_toy_decompressed, n_clusters)
 
-        for i in range(10):
-            axes[0, i].imshow(X_pca[i].reshape(28, 28), cmap='gray')
-            axes[0, i].axis('off')
+            # Affichage des données avant, après compression et après décompression avec les clusters
+            plt.figure(figsize=(18, 6))
 
-            axes[1, i].imshow(X_reconstructed[i].reshape(28, 28), cmap='gray')
-            axes[1, i].axis('off')
+            plt.subplot(1, 3, 1)
+            plt.scatter(X_toy[:, 0], X_toy[:, 1], c=clusters_original, cmap='viridis', alpha=0.6)
+            plt.title('Original toyData with Clusters')
 
-        plt.show()
+            plt.subplot(1, 3, 2)
+            plt.scatter(X_toy_reduced[:, 0], X_toy_reduced[:, 1], c=clusters_reduced, cmap='viridis', alpha=0.6)
+            plt.title('Compressed toyData with Clusters')
 
-        # Detect clusters on reduced data
-        clusters = pcap.cluster_with_pca(X_reduced, Y_train)
+            plt.subplot(1, 3, 3)
+            plt.scatter(X_toy_decompressed[:, 0], X_toy_decompressed[:, 1], c=clusters_decompressed, cmap='viridis',
+                        alpha=0.6)
+            plt.title('Decompressed toyData with Clusters')
 
-        # Visualize clusters
-        pcap.visualize_clusters(X_reduced, clusters)
+            plt.show()
 
-        # Display sample images from each cluster
-        pcap.plot_sample_images(X_reconstructed, clusters, n_clusters=10)
-        # Générer une nouvelle image
-        pcap.find_cluster_centers(X_reduced, n_clusters=10)
-        X_generated = pcap.generate_image(n_images=5)
-        plt.imshow(X_generated[0].reshape(28, 28), cmap='gray')
-        plt.title('Generated Image')
-        plt.show()
+        elif dataset_choice == "mnist":
+            X_pca = X_train.reshape(X_train.shape[0], -1)  # (60000, 784)
+            # Determine the optimal number of components
+            optimal_components = PCA.determine_optimal_components(X_pca, variance_threshold=0.95)
+            print(f"Optimal number of components to retain 95% variance: {optimal_components}")
+
+            # Use the optimal number of components for PCA
+            pcap = PCA(n_components=optimal_components)
+
+            # Apply PCA and compress data
+            X_reduced = pcap.compress(X_pca)
+
+            # Decompress data
+            X_reconstructed = pcap.decompress(X_reduced)
+
+            # Affichage des images avant et après compression
+            fig, axes = plt.subplots(2, 10, figsize=(15, 4))
+            fig.suptitle('Images avant et après compression/décompression')
+
+            for i in range(10):
+                axes[0, i].imshow(X_pca[i].reshape(28, 28), cmap='gray')
+                axes[0, i].axis('off')
+
+                axes[1, i].imshow(X_reconstructed[i].reshape(28, 28), cmap='gray')
+                axes[1, i].axis('off')
+
+            plt.show()
+
+            # Detect clusters on reduced data
+            clusters = pcap.cluster_with_pca(X_reduced, Y_train)
+
+            # Visualize clusters
+            pcap.visualize_clusters(X_reduced, clusters)
+
+            # Display sample images from each cluster
+            pcap.plot_sample_images(X_reconstructed, clusters, n_clusters=10)
+            # Générer une nouvelle image
+            pcap.find_cluster_centers(X_reduced, n_clusters=10)
+            X_generated = pcap.generate_image(n_images=5)
+            plt.imshow(X_generated[0].reshape(28, 28), cmap='gray')
+            plt.title('Generated Image')
+            plt.show()
+        else:
+            print("please choose a correct dataset.")
 
     elif model_choice == 'autoencoder':
         mnist_dataset = mnistData()
