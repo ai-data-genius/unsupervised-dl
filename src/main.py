@@ -37,6 +37,9 @@ if __name__ == '__main__':
             plt.scatter(X_toy[:, 0], X_toy[:, 1])
             plt.show()
 
+            kmeans = KMeans(3, "point")
+            kmeans.lloyd(X_toy)
+            kmeans.projection(X=X_toy)
         # compressed = kmeans.compress(X_train[1])
         # # decompress the image
         # kmeans.decompress(compressed)
@@ -89,18 +92,20 @@ if __name__ == '__main__':
 
     elif model_choice == 'autoencoder':
         mnist_dataset = mnistData()
+        #get only first 1000 samples
         X_train = mnist_dataset.getTrainX()
         Y_train = mnist_dataset.getTrainY()
         X_test = mnist_dataset.getTestX()
         Y_test = mnist_dataset.getTestY()
-        ae = AE(32, (784,), 784)
+        ae = AE(2, (784,), 784)
 
 
         ae.build()
         X_train, X_test = ae.standardize(X_train, X_test)
-        ae.fit(X_train, X_test, 100, 32)
+        ae.fit(X_train, X_test, 50, 32)
 
-        ae.projection(X_test, ae.autoencoder.predict(X_test))
+        ae.projection(X_test, ae.autoencoder.predict(X_test), Y_test, graph=False, n=20)
+        ae.projection(X_test, ae.autoencoder.predict(X_test), Y_test, graph=True)
     else:
         print("Invalid model choice. Please enter 'kmeans' or 'pca' or 'autoencoder'.")
 

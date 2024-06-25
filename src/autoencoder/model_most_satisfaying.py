@@ -18,8 +18,8 @@ class AE:
         self.encoder = keras.models.Sequential()
         self.encoder.add(layers.InputLayer(self.input_shape))
         self.encoder.add(layers.Flatten())
-        self.encoder.add(layers.Dense(512))
         self.encoder.add(layers.BatchNormalization())
+        self.encoder.add(layers.Dense(512))
         self.encoder.add(layers.Activation('tanh'))
         self.encoder.add(layers.Dense(256))
         self.encoder.add(layers.Activation('relu'))
@@ -57,31 +57,33 @@ class AE:
         self.autoencoder.fit(X_train, X_train, epochs=epochs, batch_size=batch_size, shuffle=True, validation_data=(X_test, X_test))
 
 
-    def compression(self: 'Kmeans') -> None:
-        pass
+    def compression(self, X) -> None:
+        return self.encoder.predict(X)
 
-    def decrompression(self: 'Kmeans') -> None:
-        pass
+    def decrompression(self, X) -> None:
+        return self.decoder.predict(X)
 
-    def projection(self, X_test, predict_results) -> None:
+    def projection(self, X_test, predict_results, graph=False, n=10) -> None:
+        if not graph:
+            plt.figure(figsize=(20, 4))
+            for i in range(n):
+                # Display original
+                ax = plt.subplot(2, n, i + 1)
+                plt.imshow(X_test[i].reshape(28, 28))
+                plt.gray()
+                ax.get_xaxis().set_visible(False)
+                ax.get_yaxis().set_visible(False)
 
-        n = 10  # How many digits we will display
-        plt.figure(figsize=(20, 4))
-        for i in range(n):
-            # Display original
-            ax = plt.subplot(2, n, i + 1)
-            plt.imshow(X_test[i].reshape(28, 28))
-            plt.gray()
-            ax.get_xaxis().set_visible(False)
-            ax.get_yaxis().set_visible(False)
-
-            # Display reconstruction
-            ax = plt.subplot(2, n, i + 1 + n)
-            plt.imshow(predict_results[i].reshape(28, 28))
-            plt.gray()
-            ax.get_xaxis().set_visible(False)
-            ax.get_yaxis().set_visible(False)
-        plt.show()
-
+                # Display reconstruction
+                ax = plt.subplot(2, n, i + 1 + n)
+                plt.imshow(predict_results[i].reshape(28, 28))
+                plt.gray()
+                ax.get_xaxis().set_visible(False)
+                ax.get_yaxis().set_visible(False)
+            plt.show()
+        else:
+            plt.scatter(predict_results[:, 0], predict_results[:, 1], c=Y_test)
+            plt.colorbar()
+            plt.show()
     def generation(self: 'Kmeans') -> None:
         pass
