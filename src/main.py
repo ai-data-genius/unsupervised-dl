@@ -130,23 +130,13 @@ if __name__ == '__main__':
             print("please choose a correct dataset.")
 
     elif model_choice == 'autoencoder':
-        mnist_dataset = mnistData()
-        #get only first 1000 samples
-        X_train = mnist_dataset.getTrainX()
-        Y_train = mnist_dataset.getTrainY()
-        X_test = mnist_dataset.getTestX()
-        Y_test = mnist_dataset.getTestY()
-        ae = AE(32, (784,), 784)
-
-
+        ae = AE(2, 28*28, 28*28)
         ae.build()
         X_train, X_test = ae.standardize(X_train, X_test)
-        ae.fit(X_train, X_test, 100, 32)
-
-        ae.projection(X_test, ae.autoencoder.predict(X_test), Y_test, graph=False, n=20)
-        ae.projection(X_test, ae.autoencoder.predict(X_test), Y_test, graph=True)
-
-        ae.generation(20)
+        ae.fit(X_train, X_test, 200, 32)
+        X_test_encoded = ae.compression(X_test)
+        ae.projection(X_test, X_test_encoded, Y_test, graph=False, n=20)
+        ae.projection(X_test, X_test_encoded, Y_test, graph=True)
+        ae.generation()
     else:
         print("Invalid model choice. Please enter 'kmeans' or 'pca' or 'autoencoder'.")
-
