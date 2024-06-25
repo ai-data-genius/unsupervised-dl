@@ -3,18 +3,16 @@ import matplotlib.pyplot as plt
 from dataset.dataset_mnist import mnistData
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
-from collections import defaultdict
-from sklearn.datasets import fetch_openml
-from scipy.spatial.distance import pdist, squareform
-from scipy.cluster.hierarchy import linkage, fcluster
+from sklearn.cluster import SpectralClustering
 
-class PCAp:
+
+class PCA:
     def __init__(self, n_components=2):
         self.n_components = n_components
         self.mean = None
         self.components = None
 
-    def fit_transform(self, X):
+    def compress(self, X):
         # Centrer les données
         self.mean = np.mean(X, axis=0)
         X_centered = X - self.mean
@@ -42,27 +40,14 @@ class PCAp:
 
         return X_reduced
 
-    def inverse_transform(self, X_reduced):
+    def decompress(self, X_reduced):
         # Inverser la transformation
-        X_centered = np.dot(X_reduced, self.components.T)
-        X_original = X_centered + self.mean
+        X_original = np.dot(X_reduced, self.components.T) + self.mean
         return X_original
 
-    def detect_clusters(self, X_reduced, threshold=5.0):
-        n_samples = X_reduced.shape[0]
-        clusters = np.full(n_samples, -1, dtype=int)
-        cluster_id = 0
-
-        for i in range(n_samples):
-            if clusters[i] == -1:
-                clusters[i] = cluster_id
-                for j in range(i + 1, n_samples):
-                    if clusters[j] == -1:
-                        distance = np.linalg.norm(X_reduced[i] - X_reduced[j])
-                        if distance < threshold:
-                            clusters[j] = cluster_id
-                cluster_id += 1
-
+    def cluster_with_pca(self, X_reduced, n_clusters):
+        spectral_clustering = SpectralClustering(n_clusters=n_clusters, affinity='nearest_neighbors')
+        clusters = spectral_clustering.fit_predict(X_reduced)
         return clusters
     def visualize_clusters(self, X_reduced, clusters):
         plt.figure(figsize=(12, 8))
@@ -88,47 +73,49 @@ class PCAp:
         plt.suptitle('Sample images from each cluster')
         plt.show()
 
+    def determine_optimal_components(X, variance_threshold=0.95):
+        mean = np.mean(X, axis=0)
+        X_centered = X - mean
 
-    def compression(self: 'Kmeans') -> None:
-        pass
+        # covariance matrix
+        covariance_matrix = np.cov(X_centered, rowvar=False)
 
-    def decrompression(self: 'Kmeans') -> None:
-        pass
+        # eigenvalues and eigenvectors
+        eigenvalues, eigenvectors = np.linalg.eigh(covariance_matrix)
 
-    def projection(self: 'Kmeans') -> None:
-        pass
+        # eigenvalues in descending order
+        sorted_eigenvalues = np.sort(eigenvalues)[::-1]
 
-    def generation(self: 'Kmeans') -> None:
-        pass
+        # cumulative explained variance
+        cumulative_variance = np.cumsum(sorted_eigenvalues) / np.sum(sorted_eigenvalues)
+
+        # number of components needed to reach the variance threshold
+        optimal_components = np.argmax(cumulative_variance >= variance_threshold) + 1
+
+        return optimal_components
 
 
-# Utilisation de la classe PCA
-X_train = mnistData().getTrainX()
-X = X_train.reshape(X_train.shape[0], -1)  # (60000, 784)
-# n_samples = 1000
-# n_clusters = 3
+# # Utilisation de la classe PCA
+# X_train = mnistData().getTrainX()
+# X = X_train[:20000].reshape(X_train[:20000].shape[0], -1)  # (60000, 784)
 #
-# X = np.random.randn(n_samples, 2)
-# X[:300] += 5
-# X[300:600] += 10
-# X[600:] += 15
-pcap = PCAp(n_components=2)
-pca = PCA(n_components=2)
-
-# Appliquer notre propre PCA
-X_reduced = pcap.fit_transform(X)
-
-# Détecter les clusters
-kmeans = KMeans(n_clusters=10)
-kmeans.fit(X_reduced)
-clusters = kmeans.predict(X_reduced)
-
-# Visualiser les clusters
-pcap.visualize_clusters(X_reduced, clusters)
-
-# Afficher des exemples d'images de chaque cluster
+# optimal_components = PCA.determine_optimal_components(X, variance_threshold=0.95)
+# print(f"Optimal number of components to retain 95% variance: {optimal_components}")
+# pcap = PCA(n_components=optimal_components)
+#
+# # PCA
+# X_reduced = pcap.fit_transform(X)
+# X = pcap.inverse_transform(X_reduced)
+#
+# #Cluster
+# clusters = pcap.cluster_with_pca(X_reduced, 10)
+#
+# # Visualiser les clusters
+# pcap.visualize_clusters(X_reduced, clusters)
+#
+# # Afficher des exemples d'images de chaque cluster
 # n_clusters = 10
-# pca.plot_sample_images(X, clusters, n_clusters)
+# pcap.plot_sample_images(X, clusters, n_clusters)
 
 
 
