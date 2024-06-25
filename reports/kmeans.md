@@ -44,5 +44,3 @@ def compress(self: "KMeans", image):
 ![img_8.png](img/img_8.png)
 
 ##### This is done by interpolating between 2 random centroids of the clusters, in this case we can see it is the cluster of the digit 0 and 3
-
-

@@ -18,4 +18,3 @@
 
 ### Here is a generated image of the mnist digit dataset using PCA
 ![img_5.png](img/imgpca_5.png)
-
