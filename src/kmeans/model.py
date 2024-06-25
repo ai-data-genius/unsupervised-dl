@@ -73,8 +73,9 @@ class KMeans:
             ax[i].set_title('Cluster %d' % i)
             ax[i].set_xticks(np.arange(n_classes))
             ax[i].set_xticklabels(np.arange(n_classes))
-
-        plt.show()
+            if i!=0 and (i + 1) % 10 == 0:
+                plt.show()
+                fig, ax = plt.subplots(1, int(n_clusters / 10), figsize=(10, 2))
 
         #plot the centroids
 
@@ -85,22 +86,31 @@ class KMeans:
             ax[i].axis('off')
         plt.show()
 
-    def compress(self, X):
-        X_flat = X.reshape(X.shape[0], -1)
-        X_flat = X_flat / 255.0
+    def compress(self, image):
+        return np.argmin(np.linalg.norm(image - self.centroids, axis=1))
 
-        compressed_X = np.zeros(X_flat.shape)
+    def decompress(self, id_cluster):
+        ig, ax = plt.subplots(1, self.n_clusters[id_cluster], figsize=(10, 2))
+        ax.imshow(self.centroids[id_cluster].reshape(28, 28), cmap='gray')
+        ax.axis('off')
+        plt.show()
 
-        for i in range(X_flat.shape[0]):
-            compressed_X[i] = self.centroids[self.membership[i]]
 
-        return compressed_X
+    def generate(self, n_samples, id_cluster):
+        #interpolate between the centroids to generate a sample more precisely using the n_clusters
 
-    def decompress(self, X):
-        return self.centroids[X]
+        n_clusters = self.n_clusters
+        centroids = self.centroids
 
-    def generate(self, n_samples):
-        return np.random.choice(self.n_clusters, n_samples)
+        #initialize the generated samples
+        X_gen = np.zeros((n_samples, centroids.shape[1]))
+
+        for i in range(n_samples):
+            alpha = np.random.rand()
+            X_gen[i] = alpha * centroids[id_cluster] + (1 - alpha) * centroids[(id_cluster + 1) % n_clusters]
+
+        return X_gen
+
 # Example usage:
 # kmeans = KMeans(n_clusters=10, max_iter=1000)
 # kmeans.lloyd(data)  # where data is your dataset
