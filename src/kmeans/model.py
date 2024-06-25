@@ -45,9 +45,6 @@ class KMeans:
         self.centroids = centroids
         self.membership = membership
 
-        #print the different values in membership
-        print(np.unique(membership))
-
     def plot_clusters(self, X, Y):
         #plot the a histogram the number or percentage of each class in each cluster
         n_samples = X.shape[0]
@@ -73,9 +70,8 @@ class KMeans:
             ax[i].set_title('Cluster %d' % i)
             ax[i].set_xticks(np.arange(n_classes))
             ax[i].set_xticklabels(np.arange(n_classes))
-            if i!=0 and (i + 1) % 10 == 0:
-                plt.show()
-                fig, ax = plt.subplots(1, int(n_clusters / 10), figsize=(10, 2))
+
+        plt.show()
 
         #plot the centroids
 
@@ -87,29 +83,46 @@ class KMeans:
         plt.show()
 
     def compress(self, image):
-        return np.argmin(np.linalg.norm(image - self.centroids, axis=1))
+        image_flat = image.reshape(-1)
+        return np.argmin(np.linalg.norm(image_flat - self.centroids, axis=1))
 
     def decompress(self, id_cluster):
-        ig, ax = plt.subplots(1, self.n_clusters[id_cluster], figsize=(10, 2))
-        ax.imshow(self.centroids[id_cluster].reshape(28, 28), cmap='gray')
-        ax.axis('off')
+        if self.centroids is None:
+            raise ValueError("Centroids are not initialized. Run the lloyd method first.")
+
+        if id_cluster >= self.n_clusters:
+            raise ValueError(f"Invalid id_cluster. It should be between 0 and {self.n_clusters - 1}.")
+
+        centroid = self.centroids[id_cluster]
+        decompressed_image =  centroid.reshape(28, 28)
+
+        plt.imshow(decompressed_image, cmap='gray')
+        plt.axis('off')
         plt.show()
 
 
-    def generate(self, n_samples, id_cluster):
-        #interpolate between the centroids to generate a sample more precisely using the n_clusters
+    def generate(self, steps=10):
+        if self.centroids is None:
+            raise ValueError("Centroids are not initialized. Run the lloyd method first.")
 
-        n_clusters = self.n_clusters
-        centroids = self.centroids
+        images = []
+        #random value between 0 and n_clusters int
+        random_value1 = np.random.randint(0, self.n_clusters)
+        #random_value2 should be different from random_value1, so ensure it is different
+        while True:
+            random_value2 = np.random.randint(0, self.n_clusters)
+            if random_value2 != random_value1:
+                break
 
-        #initialize the generated samples
-        X_gen = np.zeros((n_samples, centroids.shape[1]))
+        for alpha in np.linspace(0, 1, steps):
+            interpolated_image = (1 - alpha) * self.centroids[random_value1] + alpha * self.centroids[random_value2]
+            images.append(interpolated_image.reshape(28, 28))
 
-        for i in range(n_samples):
-            alpha = np.random.rand()
-            X_gen[i] = alpha * centroids[id_cluster] + (1 - alpha) * centroids[(id_cluster + 1) % n_clusters]
-
-        return X_gen
+        fig, ax = plt.subplots(1, steps, figsize=(20, 2))
+        for i in range(steps):
+            ax[i].imshow(images[i], cmap='gray')
+            ax[i].axis('off')
+        plt.show()
 
 # Example usage:
 # kmeans = KMeans(n_clusters=10, max_iter=1000)
