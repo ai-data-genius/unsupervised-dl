@@ -15,7 +15,7 @@ def main():
     Y = mnist_dataset.getTrainY()
 
 
-    model_choice = input("Enter the model to run ('kmeans' or 'pca'): ").strip().lower()
+    model_choice = input("Enter the model to run ('kmeans', 'pca', 'autoencoder'): ").strip().lower()
 
     if model_choice == 'kmeans':
         # initialize the model
@@ -37,7 +37,7 @@ def main():
         X_gen = kmeans.generate(steps=25)
 
     elif model_choice == 'pca':
-        X = X[:5000].reshape(X[:5000].shape[0], -1)  # (60000, 784)
+        X = X[:10000].reshape(X[:10000].shape[0], -1)  # (60000, 784)
         # Determine the optimal number of components
         optimal_components = PCA.determine_optimal_components(X, variance_threshold=0.95)
         print(f"Optimal number of components to retain 95% variance: {optimal_components}")
@@ -52,13 +52,20 @@ def main():
         X_reconstructed = pcap.decompress(X_reduced)
 
         # Detect clusters on reduced data
-        clusters = pcap.cluster_with_pca(X_reduced, 10)
+        clusters = pcap.cluster_with_pca(X_reduced, Y[:10000])
 
         # Visualize clusters
         pcap.visualize_clusters(X_reduced, clusters)
 
         # Display sample images from each cluster
         pcap.plot_sample_images(X_reconstructed, clusters, n_clusters=10)
+
+        # Générer une nouvelle image
+        pcap.find_cluster_centers(X_reduced, n_clusters=10)
+        X_generated = pcap.generate_image(n_images=5)
+        plt.imshow(X_generated[0].reshape(28, 28), cmap='gray')
+        plt.title('Generated Image')
+        plt.show()
 
     elif model_choice == 'autoencoder':
         mnist_dataset = mnistData()
@@ -78,4 +85,7 @@ def main():
 
     else:
         print("Invalid model choice. Please enter 'kmeans' or 'pca'.")
+
+if __name__ == "__main__":
+    main()
 

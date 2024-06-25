@@ -1,16 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from dataset.dataset_mnist import mnistData
-from sklearn.decomposition import PCA
-from sklearn.cluster import KMeans
-from sklearn.cluster import SpectralClustering
-
 
 class PCA:
     def __init__(self, n_components=2):
         self.n_components = n_components
         self.mean = None
         self.components = None
+        self.cluster_centers_ = None
 
     def compress(self, X):
         # Centrer les données
@@ -22,7 +18,8 @@ class PCA:
             raise ValueError("Les données doivent être en 2D")
 
         # Calculer la matrice de covariance
-        covariance_matrix = np.cov(X_centered, rowvar=False)
+        n_samples = X_centered.shape[0]
+        covariance_matrix = (X_centered.T @ X_centered) / (n_samples - 1)
 
         # Calculer les valeurs propres et les vecteurs propres
         eigenvalues, eigenvectors = np.linalg.eigh(covariance_matrix)
@@ -45,9 +42,21 @@ class PCA:
         X_original = np.dot(X_reduced, self.components.T) + self.mean
         return X_original
 
-    def cluster_with_pca(self, X_reduced, n_clusters):
-        spectral_clustering = SpectralClustering(n_clusters=n_clusters, affinity='nearest_neighbors')
-        clusters = spectral_clustering.fit_predict(X_reduced)
+    def cluster_with_pca(self, X_reduced, Y):
+        # Utilisation des étiquettes pour guider le clustering
+        n_clusters = len(np.unique(Y))
+        cluster_centers = np.zeros((n_clusters, X_reduced.shape[1]))
+
+        # Calculer les centres de clusters basés sur les moyennes des chiffres
+        for digit in range(n_clusters):
+            digit_indices = np.where(Y == digit)[0]
+            cluster_centers[digit] = np.mean(X_reduced[digit_indices], axis=0)
+
+        self.cluster_centers_ = cluster_centers
+
+        # Assigner chaque point à son cluster correspondant
+        clusters = np.argmin(np.linalg.norm(X_reduced[:, np.newaxis] - self.cluster_centers_, axis=2), axis=1)
+
         return clusters
     def visualize_clusters(self, X_reduced, clusters):
         plt.figure(figsize=(12, 8))
@@ -78,7 +87,8 @@ class PCA:
         X_centered = X - mean
 
         # covariance matrix
-        covariance_matrix = np.cov(X_centered, rowvar=False)
+        n_samples = X_centered.shape[0]
+        covariance_matrix = (X_centered.T @ X_centered) / (n_samples - 1)
 
         # eigenvalues and eigenvectors
         eigenvalues, eigenvectors = np.linalg.eigh(covariance_matrix)
@@ -94,28 +104,37 @@ class PCA:
 
         return optimal_components
 
+    def generate_image(self, n_images=1):
+        # Vérifier que fit_transform a été appelé
+        if self.components is None:
+            raise ValueError("Le modèle doit être ajusté avant de générer des images.")
 
-# # Utilisation de la classe PCA
-# X_train = mnistData().getTrainX()
-# X = X_train[:20000].reshape(X_train[:20000].shape[0], -1)  # (60000, 784)
-#
-# optimal_components = PCA.determine_optimal_components(X, variance_threshold=0.95)
-# print(f"Optimal number of components to retain 95% variance: {optimal_components}")
-# pcap = PCA(n_components=optimal_components)
-#
-# # PCA
-# X_reduced = pcap.fit_transform(X)
-# X = pcap.inverse_transform(X_reduced)
-#
-# #Cluster
-# clusters = pcap.cluster_with_pca(X_reduced, 10)
-#
-# # Visualiser les clusters
-# pcap.visualize_clusters(X_reduced, clusters)
-#
-# # Afficher des exemples d'images de chaque cluster
-# n_clusters = 10
-# pcap.plot_sample_images(X, clusters, n_clusters)
+        # Générer des points aléatoires autour des centres des clusters
+        if self.cluster_centers_ is None:
+            raise ValueError("Les centres des clusters doivent être définis avant de générer des images.")
+
+        images = []
+        for _ in range(n_images):
+            cluster_idx = np.random.choice(len(self.cluster_centers_))
+            cluster_center = self.cluster_centers_[cluster_idx]
+            X_reduced_random = cluster_center + 0.1 * np.random.randn(self.n_components)
+            X_generated = self.decompress(X_reduced_random.reshape(1, -1))
+            images.append(X_generated)
+
+        return np.array(images).reshape(-1, 28, 28)
+
+    def find_cluster_centers(self, X_reduced, n_clusters):
+        # Initialisation structurée des clusters
+        initial_indices = np.random.choice(X_reduced.shape[0], n_clusters, replace=False)
+        self.cluster_centers_ = X_reduced[initial_indices]
+
+        for _ in range(10):  # Nombre d'itérations pour ajuster les centres
+            clusters = np.argmin(np.linalg.norm(X_reduced[:, np.newaxis] - self.cluster_centers_, axis=2), axis=1)
+            new_centers = np.array([X_reduced[clusters == i].mean(axis=0) for i in range(n_clusters)])
+            if np.allclose(self.cluster_centers_, new_centers):
+                break
+            self.cluster_centers_ = new_centers
+
 
 
 
