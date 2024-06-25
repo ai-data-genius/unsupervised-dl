@@ -4,7 +4,11 @@ from dataset.dataset_toy import toyData
 from pca.model import PCA
 import matplotlib.pyplot as plt
 import numpy as np
+import sys
+from autoencoder.model import AE
 
+
+<<<<<<< HEAD
 def main():
     mnist_dataset = mnistData()
     toy_dataset = toyData()
@@ -58,9 +62,22 @@ def main():
         # Display sample images from each cluster
         pcap.plot_sample_images(X_reconstructed, clusters, n_clusters=10)
 
+    elif model_choice == 'autoencoder':
+        mnist_dataset = mnistData()
+        X_train = mnist_dataset.getTrainX()
+        Y_train = mnist_dataset.getTrainY()
+        X_test = mnist_dataset.getTestX()
+        Y_test = mnist_dataset.getTestY()
+
+        ae = AE(32, (784,), 784)
+        ae.build()
+
+        X_train, X_test = ae.standardize(X_train, X_test)
+        ae.fit(X_train, X_test, 20, 1028)
+
+        ae.projection(X_test, ae.autoencoder.predict(X_test))
+
+
     else:
         print("Invalid model choice. Please enter 'kmeans' or 'pca'.")
-
-if __name__ == "__main__":
-    main()
 
