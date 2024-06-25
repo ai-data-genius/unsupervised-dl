@@ -84,17 +84,18 @@ class KMeans:
 
     def compress(self, image):
         image_flat = image.reshape(-1)
-        return np.argmin(np.linalg.norm(image_flat - self.centroids, axis=1))
+        image_flat = image_flat / 255.0
+
+        id_cluster = np.argmin(np.linalg.norm(image_flat - self.centroids, axis=1))
+        return id_cluster
 
     def decompress(self, id_cluster):
         if self.centroids is None:
             raise ValueError("Centroids are not initialized. Run the lloyd method first.")
 
-        if id_cluster >= self.n_clusters:
-            raise ValueError(f"Invalid id_cluster. It should be between 0 and {self.n_clusters - 1}.")
-
         centroid = self.centroids[id_cluster]
-        decompressed_image =  centroid.reshape(28, 28)
+        centroid = centroid * 255.0
+        decompressed_image = centroid.reshape(28, 28)
 
         plt.imshow(decompressed_image, cmap='gray')
         plt.axis('off')
@@ -106,9 +107,7 @@ class KMeans:
             raise ValueError("Centroids are not initialized. Run the lloyd method first.")
 
         images = []
-        #random value between 0 and n_clusters int
         random_value1 = np.random.randint(0, self.n_clusters)
-        #random_value2 should be different from random_value1, so ensure it is different
         while True:
             random_value2 = np.random.randint(0, self.n_clusters)
             if random_value2 != random_value1:
