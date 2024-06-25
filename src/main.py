@@ -7,8 +7,6 @@ import numpy as np
 import sys
 from autoencoder.model import AE
 
-
-<<<<<<< HEAD
 def main():
     mnist_dataset = mnistData()
     toy_dataset = toyData()
