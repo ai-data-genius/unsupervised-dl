@@ -23,10 +23,10 @@ def compression(self, X) -> None:
 
 ### loss and validation loss of the auto-encoder
 
-![img_9.png](img_9.png)
+![img_9.png](img/img_9.png)
 
 ### compression et decompression of the mnist digit dataset using auto-encoder
 
-![img_10.png](img_10.png)
+![img_10.png](img/img_10.png)
 
 ### generation of the mnist digit dataset using auto-encoder
