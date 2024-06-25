@@ -97,15 +97,17 @@ if __name__ == '__main__':
         Y_train = mnist_dataset.getTrainY()
         X_test = mnist_dataset.getTestX()
         Y_test = mnist_dataset.getTestY()
-        ae = AE(2, (784,), 784)
+        ae = AE(32, (784,), 784)
 
 
         ae.build()
         X_train, X_test = ae.standardize(X_train, X_test)
-        ae.fit(X_train, X_test, 50, 32)
+        ae.fit(X_train, X_test, 100, 32)
 
         ae.projection(X_test, ae.autoencoder.predict(X_test), Y_test, graph=False, n=20)
         ae.projection(X_test, ae.autoencoder.predict(X_test), Y_test, graph=True)
+
+        ae.generation(20)
     else:
         print("Invalid model choice. Please enter 'kmeans' or 'pca' or 'autoencoder'.")
 

@@ -105,8 +105,7 @@ class AE:
             plt.show()
 
 
-    def generation(self) -> None:
-        n = 15  # figure with 15x15 digits
+    def generation(self, n) -> None:
         digit_size = 28
         figure = np.zeros((digit_size * n, digit_size * n))
         # We will sample n points within [-15, 15] standard deviations
