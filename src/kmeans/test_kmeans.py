@@ -1,5 +1,5 @@
 import numpy as np
-from src.kmeans.model import kmeans
+from src.kmeans.model import KMeans
 from src.dataset.dataset_mnist import mnistData
 #generate two clouds of points in 2D
 
@@ -21,7 +21,7 @@ print(X.shape)
 
 
 #initialize the model
-kmeans = kmeans(n_clusters)
+kmeans = KMeans(n_clusters)
 kmeans.lloyd(X)
 
 #plot the clusters
