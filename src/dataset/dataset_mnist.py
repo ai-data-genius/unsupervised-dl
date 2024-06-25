@@ -1,16 +1,17 @@
-from keras.datasets import mnist
 import tensorflow
 
-class mnistData:
+from keras.datasets import mnist
 
-    def __init__(self):
+
+class mnistData:
+    def __init__(self: "mnistData"):
         (self.train_X, self.train_y), (self.test_X, self.test_y) = mnist.load_data()
 
-    def show(self):
-        print('X_train: ' + str(self.train_X.shape))
-        print('Y_train: ' + str(self.train_y.shape))
-        print('X_test:  ' + str(self.test_X.shape))
-        print('Y_test:  ' + str(self.test_y.shape))
+    def show(self: "mnistData"):
+        print("X_train: " + str(self.train_X.shape))
+        print("Y_train: " + str(self.train_y.shape))
+        print("X_test:  " + str(self.test_X.shape))
+        print("Y_test:  " + str(self.test_y.shape))
 
     def getTrainX(self):
         return self.train_X
