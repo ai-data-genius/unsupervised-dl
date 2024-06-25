@@ -36,15 +36,15 @@ def main():
             plt.scatter(X_toy[:, 0], X_toy[:, 1])
             plt.show()
 
-        compressed = kmeans.compress(X[1])
-        # decompress the image
-        kmeans.decompress(compressed)
-
-        # generate a new image
-        X_gen = kmeans.generate(steps=25)
+        # compressed = kmeans.compress(X_train[1])
+        # # decompress the image
+        # kmeans.decompress(compressed)
+        #
+        # # generate a new image
+        # X_gen = kmeans.generate(steps=25)
 
     elif model_choice == "pca":
-        X_pca = X_train[:5000].reshape(X_train[:5000].shape[0], -1)  # (60000, 784)
+        X_pca = X_train[:10000].reshape(X_train[:10000].shape[0], -1)  # (60000, 784)
         # Determine the optimal number of components
         optimal_components = PCA.determine_optimal_components(X_pca, variance_threshold=0.95)
         print(f"Optimal number of components to retain 95% variance: {optimal_components}")
@@ -59,7 +59,7 @@ def main():
         X_reconstructed = pcap.decompress(X_reduced)
 
         # Detect clusters on reduced data
-        clusters = pcap.cluster_with_pca(X_reduced, Y[:10000])
+        clusters = pcap.cluster_with_pca(X_reduced, Y_train[:10000])
 
         # Visualize clusters
         pcap.visualize_clusters(X_reduced, clusters)
