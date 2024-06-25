@@ -2,3 +2,6 @@
 .idea
 *.egg-info
 *.pyc
+*.h5
+*.keras
+*.png
