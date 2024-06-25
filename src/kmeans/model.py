@@ -1,55 +1,52 @@
 import numpy as np
 import matplotlib.pyplot as plt
+
 from tqdm import tqdm
 from sklearn.cluster import KMeans
 
+
 class KMeans:
-    def __init__(self, n_clusters, max_iter=1000):
+    def __init__(self: 'KMeans', n_clusters, _type="image", max_iter=1000):
         self.n_clusters = n_clusters
         self.max_iter = max_iter
         self.membership = None
         self.centroids = None
+        self._type = _type
 
-    def lloyd(self, X, tol=1e-4):
+    def lloyd(self: "KMeans", X, tol=1e-4):
         n_samples = X.shape[0]
         X_flat = X.reshape(n_samples, -1)
 
-        X_flat = X_flat / 255.0
+        if self._type == "image":
+          X_flat = X_flat / 255.0
 
         centroids = X_flat[np.random.choice(n_samples, self.n_clusters, replace=False)]
         centroids_old = np.zeros_like(centroids)
 
-
         for iteration in tqdm(range(self.max_iter), desc="Lloyd's Algorithm Progress"):
-
             if np.linalg.norm(centroids - centroids_old) <= tol:
                 break
 
             centroids_old = centroids.copy()
-
-            # for i in range(n_samples):
-            #     membership[i] = np.argmin(np.linalg.norm(X_flat[i] - centroids, axis=1))
-            membership = np.array(
-                list(map(lambda i: np.argmin(np.linalg.norm(X_flat[i] - centroids, axis=1)), range(n_samples))))
-
-            #map instead of for loop from func_tools instead of for loop
-
-
-            # for i in range(self.n_clusters):
-            #     centroids[i] = np.mean(X_flat[membership == i], axis=0)
-
-            #map instead of for loop from func_tools instead of for loop
+            membership = np.array(list(map(lambda i: np.argmin(np.linalg.norm(X_flat[i] - centroids, axis=1)), range(n_samples))))
             centroids = np.array(list(map(lambda i: np.mean(X_flat[membership == i], axis=0), range(self.n_clusters))))
-
 
         self.centroids = centroids
         self.membership = membership
 
-    def plot_clusters(self, X, Y):
+        return centroids
+
+    def projection(self: "KMeans", **kwargs):
+        (self.projection_1d, self.projection_2d)[self._type == "image"](**kwargs)
+
+    def projection_1d(self: "KMeans", X):
+        plt.scatter(X[:, 0], X[:, 1], c=self.membership)
+        plt.scatter(self.centroids[:, 0], self.centroids[:, 1], c='red', marker='x')
+        plt.show()
+
+    def projection_2d(self: "KMeans", X, Y):
         #plot the a histogram the number or percentage of each class in each cluster
         n_samples = X.shape[0]
-
-
         n_classes = len(np.unique(Y))
         n_clusters = self.n_clusters
         membership = self.membership
@@ -64,32 +61,40 @@ class KMeans:
         hist = hist / np.sum(hist, axis=1)[:, None]
 
         #plot the histogram
-        fig, ax = plt.subplots(1, n_clusters, figsize=(10, 2))
-        for i in range(n_clusters):
-            ax[i].bar(np.arange(n_classes), hist[i])
-            ax[i].set_title('Cluster %d' % i)
-            ax[i].set_xticks(np.arange(n_classes))
-            ax[i].set_xticklabels(np.arange(n_classes))
-
-        plt.show()
+        for i in range(0, self.n_clusters, 10):
+            fig, ax = plt.subplots(1, 10, figsize=(20, 5))
+            for j in range(10):
+                if i + j < n_clusters:  # Ensure we don't go out of bounds
+                    ax[j].bar(np.arange(n_classes), hist[i + j])
+                    ax[j].set_title('Cluster %d' % (i + j))
+                    ax[j].set_xticks(np.arange(n_classes))
+                    ax[j].set_xticklabels(np.arange(n_classes))
+                else:
+                    ax[j].axis('off')  # Turn off the axis if there is no cluster to display
+            plt.tight_layout()
+            plt.show()
 
         #plot the centroids
+        for i in range(0, self.n_clusters, 10):
+            fig, ax = plt.subplots(1, 10, figsize=(20, 5))
+            for j in range(10):
+                if i + j < self.n_clusters:  # Ensure we don't go out of bounds
+                    ax[j].imshow(self.centroids[i + j].reshape(28, 28), cmap='gray')
+                    ax[j].axis('off')
+                    ax[j].set_title('Cluster %d' % (i + j))
+                else:
+                    ax[j].axis('off')  # Turn off the axis if there is no cluster to display
+            plt.tight_layout()
+            plt.show()
 
-
-        fig, ax = plt.subplots(1, self.n_clusters, figsize=(10, 2))
-        for i in range(self.n_clusters):
-            ax[i].imshow(self.centroids[i].reshape(28, 28), cmap='gray')
-            ax[i].axis('off')
-        plt.show()
-
-    def compress(self, image):
+    def compress(self: "KMeans", image):
         image_flat = image.reshape(-1)
         image_flat = image_flat / 255.0
 
         id_cluster = np.argmin(np.linalg.norm(image_flat - self.centroids, axis=1))
         return id_cluster
 
-    def decompress(self, id_cluster):
+    def decompress(self: "KMeans", id_cluster: int):
         if self.centroids is None:
             raise ValueError("Centroids are not initialized. Run the lloyd method first.")
 
@@ -102,7 +107,7 @@ class KMeans:
         plt.show()
 
 
-    def generate(self, steps=10):
+    def generate(self: "KMeans", steps: int = 10):
         if self.centroids is None:
             raise ValueError("Centroids are not initialized. Run the lloyd method first.")
 
@@ -122,8 +127,3 @@ class KMeans:
             ax[i].imshow(images[i], cmap='gray')
             ax[i].axis('off')
         plt.show()
-
-# Example usage:
-# kmeans = KMeans(n_clusters=10, max_iter=1000)
-# kmeans.lloyd(data)  # where data is your dataset
-# kmeans.plot_clusters(reduced_data)  # where reduced_data is your PCA-reduced dataset
