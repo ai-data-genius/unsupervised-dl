@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from keras import layers, Model, Input, backend as K
-from keras.datasets import mnist
 from keras.losses import binary_crossentropy
 
 
