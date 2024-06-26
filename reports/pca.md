@@ -6,8 +6,9 @@
 ![imgpca_6.png](img/imgpca_6.png)
 
 # Testing PCA on mnist digit dataset with 64 components
-![img_1.png](img_1.png)
-![img_2.png](img_2.png)
+![img_1.png](img/imgpca_1.png)
+![img_2.png](img/imgpca_2.png)
+![img_7.png](img/imgpca_7.png)
 
 ### compressing/decompressing the mnist digit dataset using PCA
 ### Testing PCA on mnist digit dataset with 154 components who explain 95% of the variance
