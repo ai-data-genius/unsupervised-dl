@@ -57,32 +57,53 @@ outputs = layers.Dense(original_dim, activation='sigmoid')(x)
 self.decoder = Model(latent_inputs, outputs, name='decoder')
 ```
 
+
 ## Training time
 train on 10 epochs: 111s  
 train on 200 epochs: 2100s
 
 ## Loss and validation loss of the auto-encoder
+### Autoencoder (AE)
+![img_9.png](img%2Fimg_9.png)
+
+### Variational Autoencoder (VAE)
 train on 10 epochs:  
 ![alt text](img/loss_autoencoder_10.png)
 
 train on 200 epochs:  
 ![alt text](img/loss_autoencoder.png)
 
-## Compression and decompression of the mnist digit dataset using auto-encoder
+## Compression and decompression of the mnist digit dataset using variational auto-encoder
+### Autoencoder (AE) 
+train on 100 epochs:
+![img_10.png](img%2Fimg_10.png)
+
+
+### Variational Autoencoder (VAE)
 train on 10 epochs:  
 ![alt text](img/compress_decompress_autoencoder_10.png)
 
 train on 200 epochs:  
 ![alt text](img/compress_decompress_autoencoder.png)
 
-## Visulization of the mnist digit dataset using auto-encoder
+## Visulization of the mnist digit dataset using variational auto-encoder
+
+### Autoencoder (AE)
+train on 100 epochs:
+![img_12.png](img%2Fimg_12.png)
+
+### Variational Autoencoder (VAE)
 train on 10 epochs:  
 ![alt text](img/projection_autoencoder_10.png)
 
 train on 200 epochs:  
 ![alt text](img/projection_autoencoder.png)
 
-## Generation of the mnist digit dataset using auto-encoder
+## Generation of the mnist digit dataset using variational auto-encoder
+### Autoencoder (AE)
+train on 100 epochs:
+![img_13.png](img%2Fimg_13.png)
+### Variational Autoencoder (VAE)
 train on 10 epochs:  
 ![alt text](img/generation_autoencoder_10.png)
 
