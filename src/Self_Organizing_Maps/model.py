@@ -23,7 +23,7 @@ class SOM:
 
         distances = np.sqrt((x_indices - med[0]) ** 2 + (y_indices - med[1]) ** 2)
 
-        influences = np.exp(-distances ** 2 / (2 * (self.NW ** 2)))
+        influences = np.exp(-np.power(distances, 2) / 2 * self.NW)
 
         # Update the weights
         self.weights += self.learning_rate * influences[:, :, np.newaxis] * (input_data - self.weights)
@@ -34,7 +34,16 @@ class SOM:
 
     def train(self, data):
 
+        #shuffle the data
+        np.random.shuffle(data)
+
         for epoch in tqdm(range(self.num_epochs), desc="Training epochs", unit="epoch"):
             list(map(self.process_input, tqdm(data, desc=f"Epoch {epoch + 1}", unit="data point", leave=False)))
 
         return self.weights
+
+    def save_weights(self):
+        np.save(f'models/model_{self.x}_{self.y}_{self.NW}_{self.num_epochs}_{self.learning_rate}', self.weights)
+
+    def load_weights(self, file_path):
+        self.weights = np.load(file_path)

@@ -145,13 +145,15 @@ if __name__ == '__main__':
         map_size = 5 * sqrt(X_train.shape[0])
         print(f"Map size: {map_size}")
         # Find the multiplication of map size, for example if map size is 64, the x and y will be 8*8
-        x = 16
-        y = 16
+        x = int(sqrt(map_size))
+        y = int(sqrt(map_size))
         input_size = 784
         som = SOM(x, y, input_size, num_epochs=10)
 
         X_train = X_train.reshape(X_train.shape[0], -1) / 255
         som.train(X_train)
+
+        som.save_weights()
 
         mapped_data = []
         labels = np.empty((x, y), dtype=object)
@@ -160,7 +162,6 @@ if __name__ == '__main__':
             mapped_data.append(list(med))
             labels[med[0]][med[1]] = Y_train[i]
 
-        print("Mapped data: ", mapped_data)
         print("Labels: ", labels)
 
         plt.figure(figsize=(10, 8))
