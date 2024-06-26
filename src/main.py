@@ -7,6 +7,8 @@ from dataset.dataset_mnist import mnistData
 from dataset.dataset_toy import toyData
 from kmeans.model import KMeans
 from pca.model import PCA
+from Self_Organizing_Maps.model import SOM
+from math import sqrt
 
 
 if __name__ == '__main__':
@@ -19,7 +21,7 @@ if __name__ == '__main__':
     X_test = mnist_dataset.getTestX()
     Y_test = mnist_dataset.getTestY()
 
-    model_choice = input("Enter the model to run ('kmeans', 'pca', 'autoencoder'): ").strip().lower()
+    model_choice = input("Enter the model to run ('kmeans', 'pca', 'autoencoder', 'som'): ").strip().lower()
 
 
     if model_choice == "kmeans":
@@ -138,5 +140,52 @@ if __name__ == '__main__':
         ae.projection(X_test, X_test_encoded, Y_test, graph=False, n=20)
         ae.projection(X_test, X_test_encoded, Y_test, graph=True)
         ae.generation()
+
+    elif model_choice == 'som':
+        map_size = 5 * sqrt(X_train.shape[0])
+        print(f"Map size: {map_size}")
+        # Find the multiplication of map size, for example if map size is 64, the x and y will be 8*8
+        x = 16
+        y = 16
+        input_size = 784
+        som = SOM(x, y, input_size, num_epochs=10)
+
+        X_train = X_train.reshape(X_train.shape[0], -1) / 255
+        som.train(X_train)
+
+        mapped_data = []
+        labels = np.empty((x, y), dtype=object)
+        for i, input_data in enumerate(X_train):
+            med = som.min_euc_distance(input_data)
+            mapped_data.append(list(med))
+            labels[med[0]][med[1]] = Y_train[i]
+
+        print("Mapped data: ", mapped_data)
+        print("Labels: ", labels)
+
+        plt.figure(figsize=(10, 8))
+        plt.imshow(labels.astype('float64'), cmap='viridis', interpolation='nearest')
+        plt.title("2D Representation of Iris Dataset using SOM")
+        plt.xticks(np.arange(x))
+        plt.yticks(np.arange(y))
+        plt.colorbar(label='Iris Class')
+        plt.show()
+
+        exe = X_train[0]
+
+        plt.imshow(exe.reshape(28, 28), cmap='gray')
+        plt.show()
+
+        exe = exe.reshape(1, -1) / 255
+
+        med = som.min_euc_distance(exe)
+        pred = labels[med[0]][med[1]]
+
+        print(f"Predicted label: {pred}")
+
+        #show the image of the predicted label
+        plt.imshow(X_train[np.where(Y_train == pred)[0][0]].reshape(28, 28), cmap='gray')
+        plt.show()
+
     else:
-        print("Invalid model choice. Please enter 'kmeans' or 'pca' or 'autoencoder'.")
+        print("Invalid model choice. Please enter 'kmeans' or 'pca' or 'autoencoder' or 'SOM'.")
