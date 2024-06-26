@@ -148,7 +148,7 @@ if __name__ == '__main__':
         x = int(sqrt(map_size))
         y = int(sqrt(map_size))
         input_size = 784
-        som = SOM(x, y, input_size, num_epochs=10)
+        som = SOM(x, y, input_size, num_epochs=20)
 
         X_train = X_train.reshape(X_train.shape[0], -1) / 255
         som.train(X_train)

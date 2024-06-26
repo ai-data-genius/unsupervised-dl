@@ -33,17 +33,13 @@ class SOM:
         self.update_weights(med, input_data)
 
     def train(self, data):
-
-        #shuffle the data
-        np.random.shuffle(data)
-
         for epoch in tqdm(range(self.num_epochs), desc="Training epochs", unit="epoch"):
+            np.random.shuffle(data)  # Shuffle data in-place
             list(map(self.process_input, tqdm(data, desc=f"Epoch {epoch + 1}", unit="data point", leave=False)))
-
         return self.weights
 
     def save_weights(self):
-        np.save(f'models/model_{self.x}_{self.y}_{self.NW}_{self.num_epochs}_{self.learning_rate}', self.weights)
+        np.save(f'Self_Organizing_Maps/models/model_{self.x}_{self.y}_{self.NW}_{self.num_epochs}_{self.learning_rate}', self.weights)
 
     def load_weights(self, file_path):
         self.weights = np.load(file_path)
