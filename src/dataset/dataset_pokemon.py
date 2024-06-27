@@ -16,19 +16,6 @@ class PokemonData:
         self.train_X, self.test_X, self.train_y, self.test_y, self.class_names = self._create_train_test_split()
 
     def _uniformize_background(self, image, target_background='white'):
-        image = image.convert("RGBA")
-        data = np.array(image)
-
-        # Créer un masque pour détecter les pixels de fond
-        r, g, b, a = data.T
-
-        if target_background == 'white':
-            white_areas = (r == 0) & (g == 0) & (b == 0) & (a == 0)
-            data[..., :-1][white_areas.T] = (255, 255, 255)
-
-        return Image.fromarray(data)
-
-    def _uniformize_background(self, image, target_background='white'):
         # Convertir l'image en mode RGBA pour avoir un canal alpha
         image = image.convert("RGBA")
         data = np.array(image)

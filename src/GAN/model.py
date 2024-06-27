@@ -12,13 +12,19 @@ from dataset.dataset_pokemon import PokemonData
 class Discriminator(Model):
     def __init__(self, in_features, out_features):
         super(Discriminator, self).__init__()
-        self.fc1 = layers.Dense(128)
+        self.fc1 = layers.Dense(1024, input_shape=(in_features,))
         self.leaky_relu1 = layers.LeakyReLU(alpha=0.2)
-        self.fc2 = layers.Dense(64)
+        self.fc2 = layers.Dense(512)
         self.leaky_relu2 = layers.LeakyReLU(alpha=0.2)
-        self.fc3 = layers.Dense(32)
+        self.fc3 = layers.Dense(256)
         self.leaky_relu3 = layers.LeakyReLU(alpha=0.2)
-        self.fc4 = layers.Dense(out_features)
+        self.fc4 = layers.Dense(128)
+        self.leaky_relu4 = layers.LeakyReLU(alpha=0.2)
+        self.fc5 = layers.Dense(64)
+        self.leaky_relu5 = layers.LeakyReLU(alpha=0.2)
+        self.fc6 = layers.Dense(32)
+        self.leaky_relu6 = layers.LeakyReLU(alpha=0.2)
+        self.fc7 = layers.Dense(out_features)
         self.dropout = layers.Dropout(0.3)
 
     def call(self, x, training=False):
@@ -33,84 +39,103 @@ class Discriminator(Model):
         x = self.leaky_relu3(x)
         x = self.dropout(x, training=training)
         x = self.fc4(x)
+        x = self.leaky_relu4(x)
+        x = self.dropout(x, training=training)
+        x = self.fc5(x)
+        x = self.leaky_relu5(x)
+        x = self.dropout(x, training=training)
+        x = self.fc6(x)
+        x = self.leaky_relu6(x)
+        x = self.dropout(x, training=training)
+        x = self.fc7(x)
         return x
-
 class Generator(Model):
     def __init__(self, in_features, out_features, z_size):
         super(Generator, self).__init__()
         self.z_size = z_size
-        self.fc1 = layers.Dense(32, input_shape=(self.z_size,))
+        self.fc1 = layers.Dense(1024, input_shape=(self.z_size,))
         self.relu1 = layers.LeakyReLU(alpha=0.2)
-        self.fc2 = layers.Dense(64)
+        self.fc2 = layers.Dense(2048)
         self.relu2 = layers.LeakyReLU(alpha=0.2)
-        self.fc3 = layers.Dense(128)
+        self.fc3 = layers.Dense(4096)
         self.relu3 = layers.LeakyReLU(alpha=0.2)
-        self.fc4 = layers.Dense(out_features)
-        self.dropout = layers.Dropout(0.3)
-        self.tanh = layers.Dense(32 * 32 * 3, activation='tanh')
-        self.bn = layers.BatchNormalization()
+        self.fc4 = layers.Dense(out_features, activation='tanh')  # Output layer with tanh activation
 
     def call(self, x, training=True):
         x = self.fc1(x)
         x = self.relu1(x)
-        x = self.dropout(x, training=training)
         x = self.fc2(x)
         x = self.relu2(x)
-        x = self.dropout(x, training=training)
         x = self.fc3(x)
         x = self.relu3(x)
-        x = self.dropout(x, training=training)
         x = self.fc4(x)
-        x = self.bn(x, training=training)
-        x = self.tanh(x)
-        img = tf.reshape(x, (-1, 32, 32, 3))
+        img = tf.reshape(x, (-1, 32, 32, 3))  # Reshape to (batch_size, 32, 32, 3)
         return img
+
 
 class DiscriminatorConv(Model):
     def __init__(self):
         super(DiscriminatorConv, self).__init__()
-        self.conv1 = layers.Conv2D(64, (5, 5), strides=(2, 2), padding='same', input_shape=(300, 300, 3))
+        self.conv1 = layers.Conv2D(32, kernel_size=3, strides=2, padding='same')
         self.leaky_relu1 = layers.LeakyReLU(alpha=0.2)
         self.dropout1 = layers.Dropout(0.3)
-        self.conv2 = layers.Conv2D(128, (5, 5), strides=(2, 2), padding='same')
+
+        self.conv2 = layers.Conv2D(64, kernel_size=3, strides=2, padding='same')
         self.leaky_relu2 = layers.LeakyReLU(alpha=0.2)
         self.dropout2 = layers.Dropout(0.3)
-        self.flatten = layers.Flatten()
-        self.fc1 = layers.Dense(1)
 
-    def call(self, x, training=True):
+        self.flatten = layers.Flatten()
+        self.fc = layers.Dense(1)
+
+    def call(self, x, training=False):
         x = self.conv1(x)
         x = self.leaky_relu1(x)
         x = self.dropout1(x, training=training)
+
         x = self.conv2(x)
         x = self.leaky_relu2(x)
         x = self.dropout2(x, training=training)
+
         x = self.flatten(x)
-        x = self.fc1(x)
+        x = self.fc(x)
         return x
+
 
 class GeneratorConv(Model):
     def __init__(self, z_size):
         super(GeneratorConv, self).__init__()
         self.z_size = z_size
-        self.fc1 = layers.Dense(64 * 75 * 75, input_shape=(z_size,))
+        self.fc1 = layers.Dense(8 * 8 * 128, use_bias=False, input_shape=(z_size,))
+        self.bn1 = layers.BatchNormalization()
         self.relu1 = layers.ReLU()
-        self.reshape = layers.Reshape((75, 75, 64))
-        self.conv1 = layers.Conv2DTranspose(64, (5, 5), strides=(1, 1), padding='same')
+
+        self.conv2dtranspose1 = layers.Conv2DTranspose(64, kernel_size=4, strides=2, padding='same', use_bias=False)
+        self.bn2 = layers.BatchNormalization()
         self.relu2 = layers.ReLU()
-        self.conv2 = layers.Conv2DTranspose(32, (5, 5), strides=(2, 2), padding='same')
+
+        self.conv2dtranspose2 = layers.Conv2DTranspose(32, kernel_size=4, strides=2, padding='same', use_bias=False)
+        self.bn3 = layers.BatchNormalization()
         self.relu3 = layers.ReLU()
-        self.conv3 = layers.Conv2DTranspose(3, (5, 5), strides=(2, 2), padding='same', activation='tanh')
+
+        self.conv2dtranspose3 = layers.Conv2DTranspose(3, kernel_size=4, strides=1, padding='same', use_bias=False,
+                                                       activation='tanh')
 
     def call(self, x, training=True):
         x = self.fc1(x)
+        x = self.bn1(x, training=training)
         x = self.relu1(x)
-        x = self.reshape(x)
-        x = self.conv1(x)
+
+        x = tf.reshape(x, (-1, 8, 8, 256))
+
+        x = self.conv2dtranspose1(x)
+        x = self.bn2(x, training=training)
         x = self.relu2(x)
-        x = self.conv2(x)
+
+        x = self.conv2dtranspose2(x)
+        x = self.bn3(x, training=training)
         x = self.relu3(x)
-        x = self.conv3(x)
+
+        x = self.conv2dtranspose3(x)
         return x
 
 
@@ -136,7 +161,7 @@ class GAN:
         with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
             fake_images = generator(z, training=True)
 
-            tf.py_function(self.display_images, [real_images], [])
+            # tf.py_function(self.display_images, [fake_images], [])
 
             real_logits = discriminator(real_images, training=True)
             fake_logits = discriminator(fake_images, training=True)
@@ -315,28 +340,12 @@ def load_dataset(dataset_path):
         images.append(img)
     return np.array(images)
 
-# Charger les images
-# pokemon_images = load_dataset(dataset_path)
-#
-# # Normalisation des images vers l'intervalle [-1, 1]
-# pokemon_images = (pokemon_images.astype('float32') - 127.5) / 127.5
-#
-# # Créer un dataset TensorFlow à partir des images
-# dataset = tf.data.Dataset.from_tensor_slices(pokemon_images)
-#
-# # Mélanger et diviser en lots
-# batch_size = 16
-# dataset = dataset.shuffle(buffer_size=len(pokemon_images)).batch(batch_size)
-
 mnist = mnistData()
 pokemon = PokemonData(image_size=(32,32))
-# pokemon.show_images()
-# X = mnist.getTrainX()
-# y = mnist.getTrainY()
 X = pokemon.getTrainX()
 y = pokemon.getTrainY()
 # Supposons que images et labels soient déjà définis
-images = X[:100].astype('float32')
+images = X.astype('float32')
 
 # Créez un dataset à partir des tuples (images, labels)
 dataset = tf.data.Dataset.from_tensor_slices(images)
@@ -350,20 +359,6 @@ dataset = dataset.batch(64)
 # Précharger les données
 dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
 
-# Function to display a batch of images from the dataset
-# def display_images_from_dataset(dataset, n_images=8):
-#     plt.figure(figsize=(15, 15))
-#     for images in dataset.take(1):
-#         for i in range(n_images):
-#             plt.subplot(1, n_images, i + 1)
-#             plt.imshow(images[i].numpy().astype("uint8"))  # Display the image
-#             plt.axis('off')
-#     plt.tight_layout()
-#     plt.show()
-#
-# # Assuming you have a function to load your dataset
-# display_images_from_dataset(dataset)
-
 gan = GAN(100)
 
 d = Discriminator(in_features=3072, out_features=1)
@@ -373,8 +368,8 @@ g = Generator(in_features=100, out_features=3072, z_size=100)
 
 
 # Instancier les optimiseurs
-d_optim = optimizers.Adam(learning_rate=0.002)
-g_optim = optimizers.Adam(learning_rate=0.002)
+d_optim = optimizers.Adam(learning_rate=1e-4)
+g_optim = optimizers.Adam(learning_rate=1e-4)
 
 # Instancier la fonction de perte
 loss_fn = losses.BinaryCrossentropy(from_logits=True)
@@ -383,7 +378,7 @@ loss_fn = losses.BinaryCrossentropy(from_logits=True)
 device = '/GPU:0' if tf.config.list_physical_devices('GPU') else '/CPU:0'
 
 # Entraîner le modèle
-n_epochs = 500
+n_epochs = 10000
 d_losses, g_losses = gan.train_mnist_gan(d, g, d_optim, g_optim, loss_fn, dataset, n_epochs, device, verbose=False)
 
 plt.plot(d_losses, label='Discriminator')
@@ -391,26 +386,6 @@ plt.plot(g_losses, label='Generator')
 plt.legend()
 plt.show()
 
-show_generated_images_pok(epoch=1, n_cols=8)
-
-show_generated_images_pok(epoch=100, n_cols=8)
-
-show_generated_images_pok(epoch=200, n_cols=8)
-
-show_generated_images_pok(epoch=300, n_cols=8)
-
-show_generated_images_pok(epoch=400, n_cols=8)
-
-show_generated_images_pok(epoch=499, n_cols=8)
-
-
-
-# show_generated_images(epoch=200, n_cols=8)
-#
-# show_generated_images(epoch=400, n_cols=8)
-#
-# show_generated_images(epoch=600, n_cols=8)
-#
-# show_generated_images(epoch=800, n_cols=8)
-#
-# show_generated_images(epoch=999, n_cols=8)
+for i in range(10000):
+    if i % 1000 == 0:
+        show_generated_images_pok(epoch=i, n_cols=8)
