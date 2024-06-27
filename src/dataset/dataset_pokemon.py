@@ -1,29 +1,31 @@
 import os
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 from PIL import Image
 from sklearn.model_selection import train_test_split
-import matplotlib.pyplot as plt
 
 
 class PokemonData:
     def __init__(self, image_size=(64, 64), test_size=0.2, random_state=42):
-        self.dataset_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../data/pokemon/')
+        # Définir le chemin du dataset relatif au fichier actuel
+        current_dir = os.path.dirname("/")
+        self.dataset_dir = os.path.join(current_dir, '/content/sample_data/pokemon/')
         self.image_size = image_size
         self.test_size = test_size
         self.random_state = random_state
         self.train_X, self.test_X, self.train_y, self.test_y, self.class_names = self._create_train_test_split()
 
-    def _uniformize_background(self, image, target_background='white'):
+    def _uniformize_background(self, image, target_background='white', tolerance=50):
         # Convertir l'image en mode RGBA pour avoir un canal alpha
         image = image.convert("RGBA")
         data = np.array(image)
 
-        # Créer un masque pour détecter les pixels de fond (noirs ou transparents)
+        # Créer un masque pour détecter les pixels de fond (noirs ou proches du noir)
         r, g, b, a = data.T
         if target_background == 'white':
-            mask = (r == 0) & (g == 0) & (b == 0) & (a == 0)
+            mask = (r < tolerance) & (g < tolerance) & (b < tolerance)
             data[..., :-1][mask.T] = (255, 255, 255)  # Changer les pixels en blanc
 
         # Convertir en RGB après modification
@@ -36,14 +38,12 @@ class PokemonData:
 
         for label, class_name in enumerate(os.listdir(self.dataset_dir)):
             class_dir = os.path.join(self.dataset_dir, class_name)
-
-            if os.path.isdir(class_dir):
+            if os.path.isdir(class_dir) and ".ipynb_checkpoints" not in class_dir:
                 class_names.append(class_name)
-
                 for filename in os.listdir(class_dir):
                     if filename.endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
                         img_path = os.path.join(class_dir, filename)
-                        img = Image.open(img_path)
+                        img = Image.open(img_path).convert('RGB')
                         img = self._uniformize_background(img, target_background='white')
                         img_resized = img.resize(self.image_size, Image.Resampling.LANCZOS)
                         images.append(np.array(img_resized))
@@ -54,11 +54,8 @@ class PokemonData:
     def _create_train_test_split(self):
         images, labels, class_names = self._load_images_and_labels()
         x_train, x_test, y_train, y_test = train_test_split(
-            images, labels,
-            test_size=self.test_size,
-            random_state=self.random_state,
+            images, labels, test_size=self.test_size, random_state=self.random_state
         )
-
         return x_train, x_test, y_train, y_test, class_names
 
     def show(self):

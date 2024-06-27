@@ -2,7 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 
-from autoencoder.model import AE
+from autoencoder.model.mnist import AE as AEMnist
+from autoencoder.model.pokemon import AE as AEPokemon
 from variable_autoencoder.model import VAE
 from dataset.dataset_mnist import mnistData
 from dataset.dataset_toy import toyData
@@ -23,8 +24,13 @@ if __name__ == '__main__':
     X_test = mnist_dataset.getTestX()
     Y_test = mnist_dataset.getTestY()
 
-    model_choice = input("Enter the model to run ('kmeans', 'pca', 'autoencoder', 'som'): ").strip().lower()
+    pd = PokemonData(image_size=(32,32))
+    X_train_pokemon = pd.getTrainX()
+    X_test_pokemon = pd.getTestX()
+    Y_train_pokemon = pd.getTrainY()
+    Y_test_pokemon = pd.getTestY()
 
+    model_choice = input("Enter the model to run ('kmeans', 'pca', 'autoencoder', 'vae', 'som'): ").strip().lower()
 
     if model_choice == "kmeans":
         dataset_choice = input("Enter the dataset to run ('mnist' or 'toy' or 'pokemon'): ").strip().lower()
@@ -152,19 +158,34 @@ if __name__ == '__main__':
             print("please choose a correct dataset.")
 
     elif model_choice == 'autoencoder':
-        ae = AE(2, (784,), 784)
-        ae.build()
-        Xae_train, Xae_test = ae.standardize(X_train.copy(), X_test.copy())
-        ae.fit(Xae_train, Xae_train, 100, 32)
-        ae.projection(Xae_train, ae.autoencoder.predict(Xae_train), Y_train, graph=False)
-        ae.projection(Xae_train, ae.autoencoder.predict(Xae_train), Y_train, graph=True)
-        ae.generation()
+        dataset_choice = input("Enter the dataset to run ('mnist' or 'pokemon'): ").strip().lower()
+
+        if "mnist" == dataset_choice
+            ae = AEMnist(2, (784,), 784)
+            ae.build()
+            Xae_train, Xae_test = ae.standardize(X_train.copy(), X_test.copy())
+            print(Xae_train.shape)
+            ae.fit(Xae_train, Xae_train, 100, 32)
+            ae.projection(Xae_train, ae.autoencoder.predict(Xae_train), Y_train, graph=False)
+            ae.projection(Xae_train, ae.autoencoder.predict(Xae_train), Y_train, graph=True)
+            ae.generation()
+        elif "pokemon" == dataset_choice:
+            ae = AEPokemon(3, (32*32*3), 32*32*3)
+            ae.build_model()
+            Xae_train, Xae_test = ae.normalize(X_train_pokemon.copy(), X_test_pokemon.copy())
+            print(Xae_train.shape)
+            ae.fit(Xae_train, Xae_train, 2000, 32)
+            predict_results = ae.autoencoder.predict(Xae_train)
+            ae.projection_image(Xae_train, predict_results, size=32)
+            ae.projection_3d(predict_results, Y_train_pokemon)
+            ae.generation(size=32, n=15, linsize=30)
+            ae.save_model("autoencoder/pokemon/models/pokemon_autoencoder.h5")
 
     elif model_choice == 'vae':
         vae = VAE(2, 28*28, 28*28)
         vae.build()
         X_vae_train, X_vae_test = vae.standardize(X_train.copy(), X_test.copy())
-        vae.fit(X_vae_train, X_vae_train, 100, 32)
+        vae.fit(X_vae_train, X_vae_train, 100_000, 32)
         X_train_encoded = vae.compression(X_vae_train)
         vae.projection(X_vae_train, X_train_encoded, Y_train, graph=False, n=20)
         vae.projection(X_vae_train, X_train_encoded, Y_train, graph=True)
@@ -218,4 +239,4 @@ if __name__ == '__main__':
         plt.show()
 
     else:
-        print("Invalid model choice. Please enter 'kmeans' or 'pca' or 'autoencoder' or 'SOM'.")
+        print("Invalid model choice. Please enter 'kmeans' or 'pca' or 'autoencoder' or 'vae' or 'SOM'.")
