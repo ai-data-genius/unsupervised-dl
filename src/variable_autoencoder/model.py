@@ -1,12 +1,12 @@
-import matplotlib.pyplot as plt
 import numpy as np
-
+import matplotlib.pyplot as plt
+from keras.datasets import mnist
 from keras import layers, Model, Input, backend as K
 from keras.losses import binary_crossentropy
 
 
 class VAE:
-    def __init__(self: 'AE', latent_dim, input_shape, output_shape):
+    def __init__(self, latent_dim, input_shape, output_shape):
         self.encoder = None
         self.decoder = None
         self.vae = None
@@ -17,7 +17,7 @@ class VAE:
     def build(self: 'AE') -> None:
         original_dim = self.input_shape
         intermediate_dim = 64
-        
+
         # Encoder
         inputs = Input(shape=(original_dim,))
         h = layers.Dense(intermediate_dim, activation='relu')(inputs)
@@ -73,7 +73,7 @@ class VAE:
         # Plotting the training and validation loss
         plt.figure(figsize=(10, 5))
 
-        ## Plotting training loss
+        # Plotting training loss
         plt.subplot(1, 2, 1)
         plt.plot(history.history['loss'], label='Training Loss')
         plt.xlabel('Epochs')
@@ -81,13 +81,14 @@ class VAE:
         plt.title('Training Loss')
         plt.legend()
 
-        ## Plotting validation loss
+        # Plotting validation loss
         plt.subplot(1, 2, 2)
         plt.plot(history.history['val_loss'], label='Validation Loss')
         plt.xlabel('Epochs')
         plt.ylabel('Loss')
         plt.title('Validation Loss')
         plt.legend()
+
         plt.show()
 
     def compression(self, X) -> None:
@@ -128,8 +129,8 @@ class VAE:
         n = 15
         digit_size = 28
         figure = np.zeros((digit_size * n, digit_size * n))
-        grid_x = np.linspace(-3, 3, n)
-        grid_y = np.linspace(-3, 3, n)
+        grid_x = np.linspace(-30, 30, n)
+        grid_y = np.linspace(-30, 30, n)
 
         for i, yi in enumerate(grid_x):
             for j, xi in enumerate(grid_y):

@@ -3,6 +3,7 @@ import numpy as np
 import sys
 
 from autoencoder.model import AE
+from variable_autoencoder.model import VAE
 from dataset.dataset_mnist import mnistData
 from dataset.dataset_toy import toyData
 from kmeans.model import KMeans
@@ -132,14 +133,23 @@ if __name__ == '__main__':
             print("please choose a correct dataset.")
 
     elif model_choice == 'autoencoder':
-        ae = AE(2, 28*28, 28*28)
+        ae = AE(2, (784,), 784)
         ae.build()
-        X_train, X_test = ae.standardize(X_train, X_test)
-        ae.fit(X_train, X_test, 200, 32)
-        X_test_encoded = ae.compression(X_test)
-        ae.projection(X_test, X_test_encoded, Y_test, graph=False, n=20)
-        ae.projection(X_test, X_test_encoded, Y_test, graph=True)
+        Xae_train, Xae_test = ae.standardize(X_train.copy(), X_test.copy())
+        ae.fit(Xae_train, Xae_train, 100, 32)
+        ae.projection(Xae_train, ae.autoencoder.predict(Xae_train), Y_train, graph=False)
+        ae.projection(Xae_train, ae.autoencoder.predict(Xae_train), Y_train, graph=True)
         ae.generation()
+
+    elif model_choice == 'vae':
+        vae = VAE(2, 28*28, 28*28)
+        vae.build()
+        X_vae_train, X_vae_test = vae.standardize(X_train.copy(), X_test.copy())
+        vae.fit(X_vae_train, X_vae_train, 100, 32)
+        X_train_encoded = vae.compression(X_vae_train)
+        vae.projection(X_vae_train, X_train_encoded, Y_train, graph=False, n=20)
+        vae.projection(X_vae_train, X_train_encoded, Y_train, graph=True)
+        vae.generation()
 
     elif model_choice == 'som':
         map_size = 5 * sqrt(X_train.shape[0])
