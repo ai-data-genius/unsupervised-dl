@@ -63,3 +63,23 @@ class PokemonData:
 
     def getTestY(self):
         return self.test_y
+
+    def show_images(self):
+        plt.figure(figsize=(10, 10))
+        for i in range(0,len(self.train_X)):
+            plt.subplot(5, 5, i + 1)
+            plt.xticks([])
+            plt.yticks([])
+            plt.grid(False)
+            plt.imshow(self.train_X[i])
+            plt.xlabel(self.class_names[self.train_y[i] - 1])
+        plt.show()
+        plt.figure(figsize=(10, 10))
+        for i in range(0, len(self.test_X)):
+            plt.subplot(5, 5, i + 1)
+            plt.xticks([])
+            plt.yticks([])
+            plt.grid(False)
+            plt.imshow(self.test_X[i])
+            plt.xlabel(self.class_names[self.test_y[i] - 1])
+        plt.show()
