@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 
-from autoencoder.model.mnist import AE as AEMnist
-from autoencoder.model.pokemon import AE as AEPokemon
+from autoencoder.mnist.model import AE as AEMnist
+from autoencoder.pokemon.model_pokemon import AE as AEPokemon
 from variable_autoencoder.model import VAE
 from dataset.dataset_mnist import mnistData
 from dataset.dataset_toy import toyData
