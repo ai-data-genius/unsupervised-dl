@@ -4,6 +4,7 @@ import numpy as np
 
 from PIL import Image
 from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
 
 
 class PokemonData:
@@ -29,7 +30,7 @@ class PokemonData:
                     if filename.endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
                         img_path = os.path.join(class_dir, filename)
                         img = Image.open(img_path).convert('RGB')
-                        img_resized = img.resize(self.image_size, Image.ANTIALIAS)
+                        img_resized = img.resize(self.image_size, Image.Resampling.LANCZOS)
                         images.append(np.array(img_resized))
                         labels.append(label)
 
@@ -65,21 +66,27 @@ class PokemonData:
         return self.test_y
 
     def show_images(self):
-        plt.figure(figsize=(10, 10))
-        for i in range(0,len(self.train_X)):
-            plt.subplot(5, 5, i + 1)
-            plt.xticks([])
-            plt.yticks([])
-            plt.grid(False)
-            plt.imshow(self.train_X[i])
-            plt.xlabel(self.class_names[self.train_y[i] - 1])
-        plt.show()
-        plt.figure(figsize=(10, 10))
-        for i in range(0, len(self.test_X)):
-            plt.subplot(5, 5, i + 1)
-            plt.xticks([])
-            plt.yticks([])
-            plt.grid(False)
-            plt.imshow(self.test_X[i])
-            plt.xlabel(self.class_names[self.test_y[i] - 1])
-        plt.show()
+        num_images = len(self.train_X)
+        for batch_start in range(0, num_images, 25):
+            plt.figure(figsize=(10, 10))
+            for i in range(batch_start, min(batch_start + 25, num_images)):
+                plt.subplot(5, 5, i - batch_start + 1)
+                plt.xticks([])
+                plt.yticks([])
+                plt.grid(False)
+                plt.imshow(self.train_X[i])
+                plt.xlabel(self.class_names[self.train_y[i]-1])
+            plt.show()
+
+        # Affichage des images de test
+        num_images = len(self.test_X)
+        for batch_start in range(0, num_images, 25):
+            plt.figure(figsize=(10, 10))
+            for i in range(batch_start, min(batch_start + 25, num_images)):
+                plt.subplot(5, 5, i - batch_start + 1)
+                plt.xticks([])
+                plt.yticks([])
+                plt.grid(False)
+                plt.imshow(self.test_X[i])
+                plt.xlabel(self.class_names[self.test_y[i]-1])
+            plt.show()
