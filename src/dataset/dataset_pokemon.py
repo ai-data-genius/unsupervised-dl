@@ -29,7 +29,7 @@ class PokemonData:
                     if filename.endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
                         img_path = os.path.join(class_dir, filename)
                         img = Image.open(img_path).convert('RGB')
-                        img_resized = img.resize(self.image_size, Image.ANTIALIAS)
+                        img_resized = img.resize(self.image_size, Image.Resampling.LANCZOS)
                         images.append(np.array(img_resized))
                         labels.append(label)
 
