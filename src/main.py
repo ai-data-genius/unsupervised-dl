@@ -160,7 +160,7 @@ if __name__ == '__main__':
     elif model_choice == 'autoencoder':
         dataset_choice = input("Enter the dataset to run ('mnist' or 'pokemon'): ").strip().lower()
 
-        if "mnist" == dataset_choice
+        if "mnist" == dataset_choice:
             ae = AEMnist(2, (784,), 784)
             ae.build()
             Xae_train, Xae_test = ae.standardize(X_train.copy(), X_test.copy())
