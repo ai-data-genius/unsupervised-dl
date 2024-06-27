@@ -182,22 +182,20 @@ def show_generated_images(epoch, n_cols=8):
     epoch_data = fixed_samples[epoch]
 
     # Determine the dimensions of the images
-    batch_size, height, width = epoch_data.shape  # Shape of each image
+    batch_size, vector_size = epoch_data.shape  # Shape of each image (16, 784)
+    height = int(np.sqrt(vector_size))  # Assuming square images
+    width = int(np.sqrt(vector_size))  # Assuming square images
 
     # Plot the images
     plt.figure(figsize=(15, 15))
     for i in range(batch_size):
         plt.subplot(batch_size // n_cols, n_cols, i + 1)
-        plt.imshow(epoch_data[i], cmap='gray')  # Display grayscale image
+        plt.imshow(epoch_data[i].reshape((height, width)), cmap='gray')  # Reshape vector to image dimensions
         plt.axis('off')
     plt.tight_layout()
     plt.show()
 
-
-show_generated_images(epoch=10, n_cols=8)
-
 # Instancier le Discriminateur et le Générateur
-
 
 mnist = mnistData()
 X = mnist.getTrainX()
@@ -242,12 +240,25 @@ loss_fn = losses.BinaryCrossentropy(from_logits=True)
 device = '/GPU:0' if tf.config.list_physical_devices('GPU') else '/CPU:0'
 
 # Entraîner le modèle
-n_epochs = 20
+n_epochs = 1000
 d_losses, g_losses = gan.train_mnist_gan(d, g, d_optim, g_optim, loss_fn, dataset, n_epochs, device, verbose=False)
 
 plt.plot(d_losses, label='Discriminator')
 plt.plot(g_losses, label='Generator')
+plt.ylim(0, 2)
 plt.legend()
 plt.show()
 
-show_generated_images(epoch=10, n_cols=8)
+show_generated_images(epoch=1, n_cols=8)
+
+show_generated_images(epoch=100, n_cols=8)
+
+show_generated_images(epoch=200, n_cols=8)
+
+show_generated_images(epoch=400, n_cols=8)
+
+show_generated_images(epoch=600, n_cols=8)
+
+show_generated_images(epoch=800, n_cols=8)
+
+show_generated_images(epoch=999, n_cols=8)
