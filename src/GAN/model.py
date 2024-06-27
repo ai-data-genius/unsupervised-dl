@@ -36,9 +36,10 @@ class Discriminator(Model):
         return x
 
 class Generator(Model):
-    def __init__(self, in_features, out_features):
+    def __init__(self, in_features, out_features, z_size):
         super(Generator, self).__init__()
-        self.fc1 = layers.Dense(32)
+        self.z_size = z_size
+        self.fc1 = layers.Dense(32, input_shape=(self.z_size,))
         self.relu1 = layers.LeakyReLU(alpha=0.2)
         self.fc2 = layers.Dense(64)
         self.relu2 = layers.LeakyReLU(alpha=0.2)
@@ -46,7 +47,7 @@ class Generator(Model):
         self.relu3 = layers.LeakyReLU(alpha=0.2)
         self.fc4 = layers.Dense(out_features)
         self.dropout = layers.Dropout(0.3)
-        self.tanh = layers.Activation('tanh')
+        self.tanh = layers.Dense(32 * 32 * 3, activation='tanh')
         self.bn = layers.BatchNormalization()
 
     def call(self, x, training=True):
@@ -62,7 +63,8 @@ class Generator(Model):
         x = self.fc4(x)
         x = self.bn(x, training=training)
         x = self.tanh(x)
-        return x
+        img = tf.reshape(x, (-1, 32, 32, 3))
+        return img
 
 class DiscriminatorConv(Model):
     def __init__(self):
@@ -133,6 +135,7 @@ class GAN:
 
         with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
             fake_images = generator(z, training=True)
+            assert fake_images.shape == real_images.shape, f"Fake images shape {fake_images.shape} does not match real images shape {real_images.shape}"
 
             real_logits = discriminator(real_images, training=True)
             fake_logits = discriminator(fake_images, training=True)
@@ -183,7 +186,9 @@ class GAN:
 
                 print(f'epoch_d_loss: {d_epoch_loss.numpy():.6f} \tepoch_g_loss: {g_epoch_loss.numpy():.6f}')
 
-                fixed_samples.append(g(fixed_z, training=False).numpy())
+                generated_samples = g(fixed_z, training=False).numpy()
+                assert generated_samples.shape[-1] == 3, f"Generated samples do not have 3 channels, but {generated_samples.shape[-1]}"
+                fixed_samples.append(generated_samples)
 
             with open('fixed_samples_pokemon.pkl', 'wb') as f:
                 pkl.dump(fixed_samples, f)
@@ -192,21 +197,6 @@ class GAN:
 
 
 def display_images(images, n_cols=4, figsize=(12, 6)):
-    """
-    Utility function to display a collection of images in a grid
-
-    Parameters
-    ----------
-    images: Tensor
-            tensor of shape (batch_size, channel, height, width)
-            containing images to be displayed
-    n_cols: int
-            number of columns in the grid
-
-    Returns
-    -------
-    None
-    """
     plt.style.use('ggplot')
     n_images = len(images)
     n_rows = math.ceil(n_images / n_cols)
@@ -242,6 +232,39 @@ def show_generated_images(epoch, n_cols=8):
     for i in range(batch_size):
         plt.subplot(batch_size // n_cols, n_cols, i + 1)
         plt.imshow(epoch_data[i].reshape((height, width)), cmap='gray')  # Reshape vector to image dimensions
+        plt.axis('off')
+    plt.tight_layout()
+    plt.show()
+
+def show_generated_images_pok(epoch, n_cols=8):
+    # Load fixed samples generated during training
+    with open('fixed_samples_pokemon.pkl', 'rb') as f:
+        fixed_samples = pkl.load(f)
+
+    # Select samples generated at the specified epoch
+    epoch_data = fixed_samples[epoch]
+
+    # Determine the number of images and their dimensions
+    batch_size = epoch_data.shape[0]
+    if len(epoch_data.shape) == 2:  # Flattened images
+        vector_size = epoch_data.shape[1]
+        channels = 3
+        height = int(np.sqrt(vector_size // channels))  # Assuming square images
+        width = height
+        epoch_data = epoch_data.reshape((batch_size, height, width, channels))
+    elif len(epoch_data.shape) == 4:  # Already reshaped images
+        height, width, channels = epoch_data.shape[1:]
+
+    # Ensure the image data is in the correct dtype
+    epoch_data = epoch_data.astype(np.float32)
+
+    # Plot the images
+    plt.figure(figsize=(15, 15))
+    for i in range(batch_size):
+        plt.subplot(batch_size // n_cols, n_cols, i + 1)
+        # Scale images back to [0, 1] if they were normalized to [-1, 1]
+        img = (epoch_data[i] * 0.5) + 0.5
+        plt.imshow(img)
         plt.axis('off')
     plt.tight_layout()
     plt.show()
@@ -294,21 +317,34 @@ def load_dataset(dataset_path):
 # batch_size = 16
 # dataset = dataset.shuffle(buffer_size=len(pokemon_images)).batch(batch_size)
 
+show_generated_images_pok(epoch=1, n_cols=8)
+
+show_generated_images_pok(epoch=10, n_cols=8)
+
+show_generated_images_pok(epoch=30, n_cols=8)
+
+show_generated_images_pok(epoch=50, n_cols=8)
+
+show_generated_images_pok(epoch=80, n_cols=8)
+
+show_generated_images_pok(epoch=99, n_cols=8)
+
 mnist = mnistData()
-pokemon = PokemonData()
+pokemon = PokemonData(image_size=(32,32))
+# pokemon.show_images()
 # X = mnist.getTrainX()
 # y = mnist.getTrainY()
 X = pokemon.getTrainX()
 y = pokemon.getTrainY()
 # Supposons que images et labels soient déjà définis
-images = X
-labels = y
+images = X.astype('float32')
+# labels = y
 
-images = images.astype('float32')
+images = (images - 127.5) / 127.5
 
 
 # Créez un dataset à partir des tuples (images, labels)
-dataset = tf.data.Dataset.from_tensor_slices((images, labels))
+dataset = tf.data.Dataset.from_tensor_slices(images)
 
 # Mélanger les données
 dataset = dataset.shuffle(buffer_size=len(images))
@@ -321,15 +357,11 @@ dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
 
 gan = GAN(100)
 
-d = Discriminator(in_features=784, out_features=1)
-g = Generator(in_features=100, out_features=784)
+d = Discriminator(in_features=3072, out_features=1)
+g = Generator(in_features=100, out_features=3072, z_size=100)
 # d = DiscriminatorConv()
 # g = GeneratorConv(z_size=100)
 
-# Afficher les modèles
-print(d)
-print()
-print(g)
 
 # Instancier les optimiseurs
 d_optim = optimizers.Adam(learning_rate=0.002)
@@ -342,7 +374,7 @@ loss_fn = losses.BinaryCrossentropy(from_logits=True)
 device = '/GPU:0' if tf.config.list_physical_devices('GPU') else '/CPU:0'
 
 # Entraîner le modèle
-n_epochs = 10
+n_epochs = 100
 d_losses, g_losses = gan.train_mnist_gan(d, g, d_optim, g_optim, loss_fn, dataset, n_epochs, device, verbose=False)
 
 plt.plot(d_losses, label='Discriminator')
@@ -350,13 +382,17 @@ plt.plot(g_losses, label='Generator')
 plt.legend()
 plt.show()
 
-show_generated_images_conv(epoch=1, n_cols=8)
+show_generated_images_pok(epoch=1, n_cols=8)
 
-show_generated_images_conv(epoch=3, n_cols=8)
+show_generated_images_pok(epoch=100, n_cols=8)
 
-show_generated_images_conv(epoch=6, n_cols=8)
+show_generated_images_pok(epoch=200, n_cols=8)
 
-show_generated_images_conv(epoch=9, n_cols=8)
+show_generated_images_pok(epoch=300, n_cols=8)
+
+show_generated_images_pok(epoch=400, n_cols=8)
+
+show_generated_images_pok(epoch=499, n_cols=8)
 
 
 
