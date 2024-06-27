@@ -10,6 +10,7 @@ from kmeans.model import KMeans
 from pca.model import PCA
 from Self_Organizing_Maps.model import SOM
 from math import sqrt
+from src.dataset.dataset_pokemon import PokemonData
 
 
 if __name__ == '__main__':
@@ -26,16 +27,34 @@ if __name__ == '__main__':
 
 
     if model_choice == "kmeans":
-        dataset_choice = input("Enter the dataset to run ('mnist' or 'toy'): ").strip().lower()
+        dataset_choice = input("Enter the dataset to run ('mnist' or 'toy' or 'pokemon'): ").strip().lower()
 
         if dataset_choice == "mnist":
-            kmeans = KMeans(20, max_iter=100)
+            kmeans = KMeans(20, max_iter=10)
             kmeans.lloyd(X_train)
             kmeans.projection(X=X_train, Y=Y_train)
 
             compressed = kmeans.compress(X_train[1])
             kmeans.decompress(compressed)
             kmeans.generate(steps=25)
+        if dataset_choice == "pokemon":
+            pokemon_dataset = PokemonData(image_size=(32, 32))
+
+            X_train = pokemon_dataset.getTrainX()
+            Y_train = pokemon_dataset.getTrainY()
+            X_test = pokemon_dataset.getTestX()
+            Y_test = pokemon_dataset.getTestY()
+
+            kmeans = KMeans(100, max_iter=1000)
+
+            # Train the KMeans model
+            kmeans.lloyd(X_train, tol=1e-7)
+            print("hello")
+
+            kmeans.projection(X=X_train, Y=Y_train)
+
+            kmeans.save_weights()
+
         elif dataset_choice == "toy":
             plt.scatter(X_toy[:, 0], X_toy[:, 1])
             plt.show()

@@ -18,23 +18,28 @@ class KMeans:
         X_flat = X.reshape(n_samples, -1)
 
         if self._type == "image":
-          X_flat = X_flat / 255.0
-
+            print("Image")
+            X_flat = X_flat / 255.0
         centroids = X_flat[np.random.choice(n_samples, self.n_clusters, replace=False)]
         centroids_old = np.zeros_like(centroids)
 
         for iteration in tqdm(range(self.max_iter), desc="Lloyd's Algorithm Progress"):
-            if np.linalg.norm(centroids - centroids_old) <= tol:
-                break
+            # if np.linalg.norm(centroids - centroids_old) <= tol:
+            #     break
 
             centroids_old = centroids.copy()
-            membership = np.array(list(map(lambda i: np.argmin(np.linalg.norm(X_flat[i] - centroids, axis=1)), range(n_samples))))
-            centroids = np.array(list(map(lambda i: np.mean(X_flat[membership == i], axis=0), range(self.n_clusters))))
+            membership = np.array(
+                list(map(lambda i: np.argmin(np.linalg.norm(X_flat[i] - centroids, axis=1)), range(n_samples))))
+
+            for i in range(self.n_clusters):
+                if np.any(membership == i):
+                    centroids[i] = np.mean(X_flat[membership == i], axis=0)
+                else:
+                    # Reinitialize empty cluster
+                    centroids[i] = X_flat[np.random.choice(n_samples)]
 
         self.centroids = centroids
         self.membership = membership
-
-        return centroids
 
     def projection(self: "KMeans", **kwargs):
         (self.projection_1d, self.projection_2d)[self._type == "image"](**kwargs)
@@ -79,13 +84,14 @@ class KMeans:
             fig, ax = plt.subplots(1, 10, figsize=(20, 5))
             for j in range(10):
                 if i + j < self.n_clusters:  # Ensure we don't go out of bounds
-                    ax[j].imshow(self.centroids[i + j].reshape(28, 28), cmap='gray')
+                    ax[j].imshow(self.centroids[i + j].reshape(32, 32, 3), cmap='gray')
                     ax[j].axis('off')
                     ax[j].set_title('Cluster %d' % (i + j))
                 else:
                     ax[j].axis('off')  # Turn off the axis if there is no cluster to display
             plt.tight_layout()
             plt.show()
+
 
     def compress(self: "KMeans", image):
         image_flat = image.reshape(-1)
@@ -127,3 +133,9 @@ class KMeans:
             ax[i].imshow(images[i], cmap='gray')
             ax[i].axis('off')
         plt.show()
+
+    def save_weights(self):
+        np.save(f'kmeans/models/model_{self.n_clusters}_{self.max_iter}', self.centroids)
+
+    def load_weights(self, file_path):
+        self.centroids = np.load(file_path)
