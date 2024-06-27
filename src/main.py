@@ -179,6 +179,7 @@ if __name__ == '__main__':
             ae.projection_image(Xae_train, predict_results, size=32)
             ae.projection_3d(predict_results, Y_train_pokemon)
             ae.generation(size=32, n=15, linsize=30)
+            ae.save_model("autoencoder/pokemon/models/pokemon_autoencoder.h5")
 
     elif model_choice == 'vae':
         vae = VAE(2, 28*28, 28*28)
