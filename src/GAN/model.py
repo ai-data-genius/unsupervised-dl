@@ -4,7 +4,9 @@ import numpy as np
 import pickle as pkl
 import matplotlib.pyplot as plt
 import math
+import os
 from dataset.dataset_mnist import mnistData
+from dataset.dataset_pokemon import PokemonData
 
 
 class Discriminator(Model):
@@ -20,7 +22,7 @@ class Discriminator(Model):
         self.dropout = layers.Dropout(0.3)
 
     def call(self, x, training=False):
-        x = tf.reshape(x, (x.shape[0], -1))  # Flatten the input
+        x = tf.reshape(x, (x.shape[0], -1))
         x = self.fc1(x)
         x = self.leaky_relu1(x)
         x = self.dropout(x, training=training)
@@ -61,6 +63,55 @@ class Generator(Model):
         x = self.bn(x, training=training)
         x = self.tanh(x)
         return x
+
+class DiscriminatorConv(Model):
+    def __init__(self):
+        super(DiscriminatorConv, self).__init__()
+        self.conv1 = layers.Conv2D(64, (5, 5), strides=(2, 2), padding='same', input_shape=(300, 300, 3))
+        self.leaky_relu1 = layers.LeakyReLU(alpha=0.2)
+        self.dropout1 = layers.Dropout(0.3)
+        self.conv2 = layers.Conv2D(128, (5, 5), strides=(2, 2), padding='same')
+        self.leaky_relu2 = layers.LeakyReLU(alpha=0.2)
+        self.dropout2 = layers.Dropout(0.3)
+        self.flatten = layers.Flatten()
+        self.fc1 = layers.Dense(1)
+
+    def call(self, x, training=True):
+        x = self.conv1(x)
+        x = self.leaky_relu1(x)
+        x = self.dropout1(x, training=training)
+        x = self.conv2(x)
+        x = self.leaky_relu2(x)
+        x = self.dropout2(x, training=training)
+        x = self.flatten(x)
+        x = self.fc1(x)
+        return x
+
+class GeneratorConv(Model):
+    def __init__(self, z_size):
+        super(GeneratorConv, self).__init__()
+        self.z_size = z_size
+        self.fc1 = layers.Dense(64 * 75 * 75, input_shape=(z_size,))
+        self.relu1 = layers.ReLU()
+        self.reshape = layers.Reshape((75, 75, 64))
+        self.conv1 = layers.Conv2DTranspose(64, (5, 5), strides=(1, 1), padding='same')
+        self.relu2 = layers.ReLU()
+        self.conv2 = layers.Conv2DTranspose(32, (5, 5), strides=(2, 2), padding='same')
+        self.relu3 = layers.ReLU()
+        self.conv3 = layers.Conv2DTranspose(3, (5, 5), strides=(2, 2), padding='same', activation='tanh')
+
+    def call(self, x, training=True):
+        x = self.fc1(x)
+        x = self.relu1(x)
+        x = self.reshape(x)
+        x = self.conv1(x)
+        x = self.relu2(x)
+        x = self.conv2(x)
+        x = self.relu3(x)
+        x = self.conv3(x)
+        return x
+
+
 
 class GAN:
     def __init__(self, z_size):
@@ -112,7 +163,7 @@ class GAN:
                 print(f'Epoch [{epoch + 1}/{n_epochs}]:')
                 d_running_batch_loss = 0
                 g_running_batch_loss = 0
-                for curr_batch, (real_images, _) in enumerate(dataset):
+                for curr_batch, real_images in enumerate(dataset):
                     real_images = tf.cast(real_images, tf.float32)
                     real_images = (real_images / 127.5) - 1
 
@@ -134,7 +185,7 @@ class GAN:
 
                 fixed_samples.append(g(fixed_z, training=False).numpy())
 
-            with open('fixed_samples.pkl', 'wb') as f:
+            with open('fixed_samples_pokemon.pkl', 'wb') as f:
                 pkl.dump(fixed_samples, f)
 
         return d_losses, g_losses
@@ -175,7 +226,7 @@ def display_images(images, n_cols=4, figsize=(12, 6)):
 
 def show_generated_images(epoch, n_cols=8):
     # Load fixed samples generated during training
-    with open('fixed_samples.pkl', 'rb') as f:
+    with open('fixed_samples_pokemon.pkl', 'rb') as f:
         fixed_samples = pkl.load(f)
 
     # Select samples generated at the specified epoch
@@ -195,11 +246,60 @@ def show_generated_images(epoch, n_cols=8):
     plt.tight_layout()
     plt.show()
 
+def show_generated_images_conv(epoch, n_cols=8):
+    # Load fixed samples generated during training
+    with open('fixed_samples_pokemon.pkl', 'rb') as f:
+        fixed_samples = pkl.load(f)
+
+    # Select samples generated at the specified epoch
+    epoch_data = fixed_samples[epoch]
+
+    # Plot the images
+    plt.figure(figsize=(15, 15))
+    for i in range(len(epoch_data)):
+        plt.subplot(len(epoch_data) // n_cols, n_cols, i + 1)
+        plt.imshow((epoch_data[i] * 0.5 + 0.5).astype(np.float32))# Scale images back to [0, 1]
+        plt.axis('off')
+    plt.tight_layout()
+    plt.show()
+
+
 # Instancier le Discriminateur et le Générateur
 
+# Chemin vers votre dataset Pokémon
+dataset_path = '../dataset/pokemon/00_Normal'
+
+# Créer un dataset à partir des fichiers d'images
+def load_dataset(dataset_path):
+    images = []
+    for filename in os.listdir(dataset_path):
+        img = tf.keras.preprocessing.image.load_img(
+            os.path.join(dataset_path, filename),
+            target_size=(300, 300)  # Redimensionner toutes les images à 300x300
+        )
+        img = tf.keras.preprocessing.image.img_to_array(img)
+        images.append(img)
+    return np.array(images)
+
+# Charger les images
+# pokemon_images = load_dataset(dataset_path)
+#
+# # Normalisation des images vers l'intervalle [-1, 1]
+# pokemon_images = (pokemon_images.astype('float32') - 127.5) / 127.5
+#
+# # Créer un dataset TensorFlow à partir des images
+# dataset = tf.data.Dataset.from_tensor_slices(pokemon_images)
+#
+# # Mélanger et diviser en lots
+# batch_size = 16
+# dataset = dataset.shuffle(buffer_size=len(pokemon_images)).batch(batch_size)
+
 mnist = mnistData()
-X = mnist.getTrainX()
-y = mnist.getTrainY()
+pokemon = PokemonData()
+# X = mnist.getTrainX()
+# y = mnist.getTrainY()
+X = pokemon.getTrainX()
+y = pokemon.getTrainY()
 # Supposons que images et labels soient déjà définis
 images = X
 labels = y
@@ -223,6 +323,8 @@ gan = GAN(100)
 
 d = Discriminator(in_features=784, out_features=1)
 g = Generator(in_features=100, out_features=784)
+# d = DiscriminatorConv()
+# g = GeneratorConv(z_size=100)
 
 # Afficher les modèles
 print(d)
@@ -240,25 +342,30 @@ loss_fn = losses.BinaryCrossentropy(from_logits=True)
 device = '/GPU:0' if tf.config.list_physical_devices('GPU') else '/CPU:0'
 
 # Entraîner le modèle
-n_epochs = 1000
+n_epochs = 10
 d_losses, g_losses = gan.train_mnist_gan(d, g, d_optim, g_optim, loss_fn, dataset, n_epochs, device, verbose=False)
 
 plt.plot(d_losses, label='Discriminator')
 plt.plot(g_losses, label='Generator')
-plt.ylim(0, 2)
 plt.legend()
 plt.show()
 
-show_generated_images(epoch=1, n_cols=8)
+show_generated_images_conv(epoch=1, n_cols=8)
 
-show_generated_images(epoch=100, n_cols=8)
+show_generated_images_conv(epoch=3, n_cols=8)
 
-show_generated_images(epoch=200, n_cols=8)
+show_generated_images_conv(epoch=6, n_cols=8)
 
-show_generated_images(epoch=400, n_cols=8)
+show_generated_images_conv(epoch=9, n_cols=8)
 
-show_generated_images(epoch=600, n_cols=8)
 
-show_generated_images(epoch=800, n_cols=8)
 
-show_generated_images(epoch=999, n_cols=8)
+# show_generated_images(epoch=200, n_cols=8)
+#
+# show_generated_images(epoch=400, n_cols=8)
+#
+# show_generated_images(epoch=600, n_cols=8)
+#
+# show_generated_images(epoch=800, n_cols=8)
+#
+# show_generated_images(epoch=999, n_cols=8)
