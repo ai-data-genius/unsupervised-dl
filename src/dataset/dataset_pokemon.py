@@ -10,8 +10,7 @@ from sklearn.model_selection import train_test_split
 class PokemonData:
     def __init__(self, image_size=(64, 64), test_size=0.2, random_state=42):
         # Définir le chemin du dataset relatif au fichier actuel
-        current_dir = os.path.dirname("/")
-        self.dataset_dir = os.path.join(current_dir, '/content/sample_data/pokemon/')
+        self.dataset_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../data/pokemon/')
         self.image_size = image_size
         self.test_size = test_size
         self.random_state = random_state
