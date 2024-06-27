@@ -15,6 +15,33 @@ class PokemonData:
         self.random_state = random_state
         self.train_X, self.test_X, self.train_y, self.test_y, self.class_names = self._create_train_test_split()
 
+    def _uniformize_background(self, image, target_background='white'):
+        image = image.convert("RGBA")
+        data = np.array(image)
+
+        # Créer un masque pour détecter les pixels de fond
+        r, g, b, a = data.T
+
+        if target_background == 'white':
+            white_areas = (r == 0) & (g == 0) & (b == 0) & (a == 0)
+            data[..., :-1][white_areas.T] = (255, 255, 255)
+
+        return Image.fromarray(data)
+
+    def _uniformize_background(self, image, target_background='white'):
+        # Convertir l'image en mode RGBA pour avoir un canal alpha
+        image = image.convert("RGBA")
+        data = np.array(image)
+
+        # Créer un masque pour détecter les pixels de fond (noirs ou transparents)
+        r, g, b, a = data.T
+        if target_background == 'white':
+            mask = (r == 0) & (g == 0) & (b == 0) & (a == 0)
+            data[..., :-1][mask.T] = (255, 255, 255)  # Changer les pixels en blanc
+
+        # Convertir en RGB après modification
+        return Image.fromarray(data).convert('RGB')
+
     def _load_images_and_labels(self):
         images = []
         labels = []
@@ -29,7 +56,8 @@ class PokemonData:
                 for filename in os.listdir(class_dir):
                     if filename.endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
                         img_path = os.path.join(class_dir, filename)
-                        img = Image.open(img_path).convert('RGB')
+                        img = Image.open(img_path)
+                        img = self._uniformize_background(img, target_background='white')
                         img_resized = img.resize(self.image_size, Image.Resampling.LANCZOS)
                         images.append(np.array(img_resized))
                         labels.append(label)

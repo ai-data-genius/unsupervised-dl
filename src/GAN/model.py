@@ -135,7 +135,8 @@ class GAN:
 
         with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
             fake_images = generator(z, training=True)
-            assert fake_images.shape == real_images.shape, f"Fake images shape {fake_images.shape} does not match real images shape {real_images.shape}"
+
+            tf.py_function(self.display_images, [real_images], [])
 
             real_logits = discriminator(real_images, training=True)
             fake_logits = discriminator(fake_images, training=True)
@@ -194,6 +195,16 @@ class GAN:
                 pkl.dump(fixed_samples, f)
 
         return d_losses, g_losses
+
+    def display_images(self, images):
+        images = (images * 0.5 + 0.5).numpy()  # Rescale to [0, 1] and convert to numpy array
+        plt.figure(figsize=(15, 15))
+        for i in range(min(8, len(images))):
+            plt.subplot(1, 8, i + 1)
+            plt.imshow(images[i])
+            plt.axis('off')
+        plt.tight_layout()
+        plt.show()
 
 
 def display_images(images, n_cols=4, figsize=(12, 6)):
@@ -317,18 +328,6 @@ def load_dataset(dataset_path):
 # batch_size = 16
 # dataset = dataset.shuffle(buffer_size=len(pokemon_images)).batch(batch_size)
 
-show_generated_images_pok(epoch=1, n_cols=8)
-
-show_generated_images_pok(epoch=10, n_cols=8)
-
-show_generated_images_pok(epoch=30, n_cols=8)
-
-show_generated_images_pok(epoch=50, n_cols=8)
-
-show_generated_images_pok(epoch=80, n_cols=8)
-
-show_generated_images_pok(epoch=99, n_cols=8)
-
 mnist = mnistData()
 pokemon = PokemonData(image_size=(32,32))
 # pokemon.show_images()
@@ -337,11 +336,7 @@ pokemon = PokemonData(image_size=(32,32))
 X = pokemon.getTrainX()
 y = pokemon.getTrainY()
 # Supposons que images et labels soient déjà définis
-images = X.astype('float32')
-# labels = y
-
-images = (images - 127.5) / 127.5
-
+images = X[:100].astype('float32')
 
 # Créez un dataset à partir des tuples (images, labels)
 dataset = tf.data.Dataset.from_tensor_slices(images)
@@ -354,6 +349,20 @@ dataset = dataset.batch(64)
 
 # Précharger les données
 dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
+
+# Function to display a batch of images from the dataset
+# def display_images_from_dataset(dataset, n_images=8):
+#     plt.figure(figsize=(15, 15))
+#     for images in dataset.take(1):
+#         for i in range(n_images):
+#             plt.subplot(1, n_images, i + 1)
+#             plt.imshow(images[i].numpy().astype("uint8"))  # Display the image
+#             plt.axis('off')
+#     plt.tight_layout()
+#     plt.show()
+#
+# # Assuming you have a function to load your dataset
+# display_images_from_dataset(dataset)
 
 gan = GAN(100)
 
@@ -374,7 +383,7 @@ loss_fn = losses.BinaryCrossentropy(from_logits=True)
 device = '/GPU:0' if tf.config.list_physical_devices('GPU') else '/CPU:0'
 
 # Entraîner le modèle
-n_epochs = 100
+n_epochs = 500
 d_losses, g_losses = gan.train_mnist_gan(d, g, d_optim, g_optim, loss_fn, dataset, n_epochs, device, verbose=False)
 
 plt.plot(d_losses, label='Discriminator')
