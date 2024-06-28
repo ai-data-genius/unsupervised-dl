@@ -94,6 +94,7 @@ class AE:
                     decay_rate=decay_rate,
                     staircase=True,
                 ),
+                weight_decay=1e-5,
             ),
             loss=keras.losses.binary_crossentropy,
         )

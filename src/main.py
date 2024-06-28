@@ -4,7 +4,8 @@ import sys
 
 from autoencoder.mnist.model import AE as AEMnist
 from autoencoder.pokemon.model_pokemon import AE as AEPokemon
-from variable_autoencoder.model import VAE
+from variable_autoencoder.mnist.model import VAE as VAEMnist
+from variable_autoencoder.pokemon.model import VAE as VAEPokemon
 from dataset.dataset_mnist import mnistData
 from dataset.dataset_toy import toyData
 from kmeans.model import KMeans
@@ -165,7 +166,7 @@ if __name__ == '__main__':
             ae.build()
             Xae_train, Xae_test = ae.standardize(X_train.copy(), X_test.copy())
             print(Xae_train.shape)
-            ae.fit(Xae_train, Xae_train, 100, 32)
+            ae.project_losses(ae.fit(Xae_train, Xae_train, 10_000, 32))
             ae.projection(Xae_train, ae.autoencoder.predict(Xae_train), Y_train, graph=False)
             ae.projection(Xae_train, ae.autoencoder.predict(Xae_train), Y_train, graph=True)
             ae.generation()
@@ -174,7 +175,7 @@ if __name__ == '__main__':
             ae.build_model()
             Xae_train, Xae_test = ae.normalize(X_train_pokemon.copy(), X_test_pokemon.copy())
             print(Xae_train.shape)
-            ae.fit(Xae_train, Xae_train, 2000, 32)
+            ae.fit(Xae_train, Xae_train, 20_000, 32)
             predict_results = ae.autoencoder.predict(Xae_train)
             ae.projection_image(Xae_train, predict_results, size=32)
             ae.projection_3d(predict_results, Y_train_pokemon)
@@ -182,14 +183,27 @@ if __name__ == '__main__':
             ae.save_model("autoencoder/pokemon/models/pokemon_autoencoder.h5")
 
     elif model_choice == 'vae':
-        vae = VAE(2, 28*28, 28*28)
-        vae.build()
-        X_vae_train, X_vae_test = vae.standardize(X_train.copy(), X_test.copy())
-        vae.fit(X_vae_train, X_vae_train, 100_000, 32)
-        X_train_encoded = vae.compression(X_vae_train)
-        vae.projection(X_vae_train, X_train_encoded, Y_train, graph=False, n=20)
-        vae.projection(X_vae_train, X_train_encoded, Y_train, graph=True)
-        vae.generation()
+        dataset_choice = input("Enter the dataset to run ('mnist' or 'pokemon'): ").strip().lower()
+
+        if "mnist" == dataset_choice:
+            vae = VAEMnist(2, 28*28, 28*28)
+            vae.build()
+            X_vae_train, X_vae_test = vae.standardize(X_train.copy(), X_test.copy())
+            vae.fit(X_vae_train, X_vae_train, 100_000, 32)
+            X_train_encoded = vae.compression(X_vae_train)
+            vae.projection(X_vae_train, X_train_encoded, Y_train, graph=False, n=20)
+            vae.projection(X_vae_train, X_train_encoded, Y_train, graph=True)
+            vae.generation()
+        elif "pokemon" == dataset_choice:
+            vae = VAEPokemon(3, 32*32*3, 32*32*3)
+            vae.build_model()
+            X_vae_train, X_vae_test = vae.normalize(X_train.copy(), X_test.copy())
+            print(X_vae_train.shape)
+            vae.fit(X_vae_train, X_vae_train, 50_000, 512)
+            predict_results = vae.compression(X_vae_train)
+            vae.projection_image(X_vae_train, vae.decrompression(predict_results), size=32)
+            vae.projection_3d(predict_results, Y_train)
+            vae.generation(size=32, n=15, linsize=30)
 
     elif model_choice == 'som':
         map_size = 5 * sqrt(X_train.shape[0])
