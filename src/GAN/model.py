@@ -2,13 +2,14 @@ import tensorflow as tf
 from tensorflow.keras import layers, Model, optimizers, losses
 import numpy as np
 import pickle as pkl
-import matplotlib.pyplot as plt
 import math
 import os
 from dataset.dataset_mnist import mnistData
 from dataset.dataset_pokemon import PokemonData
 from sklearn.manifold import TSNE
 import seaborn as sns
+import matplotlib.pyplot as plt
+
 
 
 class Discriminator(Model):
@@ -334,23 +335,25 @@ def load_dataset(dataset_path):
         images.append(img)
     return np.array(images)
 
-def visualize_latent_space(generator, z_size, num_samples=1000):
+def visualize_latent_space_3d(generator, z_size, num_samples=1000):
     # Générer des vecteurs latents aléatoires
     z = tf.random.uniform(minval=-1, maxval=1, shape=(num_samples, z_size))
 
     # Utiliser le générateur pour produire des images à partir des vecteurs latents
     generated_images = generator(z, training=False).numpy()
 
-    # Appliquer t-SNE pour réduire la dimension des vecteurs latents à 2D
-    tsne = TSNE(n_components=2, perplexity=30, n_iter=300)
+    # Appliquer t-SNE pour réduire la dimension des vecteurs latents à 3D
+    tsne = TSNE(n_components=3, perplexity=30, n_iter=300)
     z_embedded = tsne.fit_transform(z.numpy())
 
-    # Visualiser les vecteurs latents
-    plt.figure(figsize=(12, 10))
-    sns.scatterplot(x=z_embedded[:, 0], y=z_embedded[:, 1])
-    plt.title('t-SNE projection of the latent space')
-    plt.xlabel('t-SNE component 1')
-    plt.ylabel('t-SNE component 2')
+    # Visualiser les vecteurs latents en 3D
+    fig = plt.figure(figsize=(12, 10))
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(z_embedded[:, 0], z_embedded[:, 1], z_embedded[:, 2])
+    ax.set_title('t-SNE projection of the latent space in 3D')
+    ax.set_xlabel('t-SNE component 1')
+    ax.set_ylabel('t-SNE component 2')
+    ax.set_zlabel('t-SNE component 3')
     plt.show()
 
 mnist = mnistData()
@@ -400,7 +403,7 @@ plt.legend()
 plt.show()
 
 # Visualiser l'espace latent
-visualize_latent_space(g, z_size=100)
+visualize_latent_space_3d(g, z_size=100)
 
 for i in range(500):
     if i % 100 == 0:
