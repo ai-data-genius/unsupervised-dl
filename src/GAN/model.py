@@ -9,6 +9,8 @@ from dataset.dataset_pokemon import PokemonData
 from sklearn.manifold import TSNE
 import seaborn as sns
 import matplotlib.pyplot as plt
+from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+
 
 
 
@@ -356,6 +358,38 @@ def visualize_latent_space_3d(generator, z_size, num_samples=1000):
     ax.set_zlabel('t-SNE component 3')
     plt.show()
 
+
+def visualize_latent_space_with_images_2d(generator, z_size, num_samples=100):
+    # Générer des vecteurs latents aléatoires
+    z = tf.random.uniform(minval=-1, maxval=1, shape=(num_samples, z_size))
+
+    # Utiliser le générateur pour produire des images à partir des vecteurs latents
+    generated_images = generator(z, training=False).numpy()
+
+    # Appliquer t-SNE pour réduire la dimension des vecteurs latents à 2D
+    tsne = TSNE(n_components=2, perplexity=30, n_iter=300)
+    z_embedded = tsne.fit_transform(z.numpy())
+
+    # Visualiser les vecteurs latents en 2D avec les images générées
+    fig, ax = plt.subplots(figsize=(12, 10))
+
+    for i in range(num_samples):
+        x, y = z_embedded[i]
+        img = generated_images[i] * 0.5 + 0.5  # Rescale to [0, 1]
+        img = np.clip(img, 0, 1)  # Ensure the values are within [0, 1]
+
+        imagebox = OffsetImage(img, zoom=0.3, cmap='viridis')
+        ab = AnnotationBbox(imagebox, (x, y), xycoords='data', frameon=False)
+        ax.add_artist(ab)
+
+        ax.scatter(x, y)
+
+    ax.set_title('t-SNE projection of the latent space in 2D with generated images')
+    ax.set_xlabel('t-SNE component 1')
+    ax.set_ylabel('t-SNE component 2')
+    plt.show()
+
+
 mnist = mnistData()
 pokemon = PokemonData(image_size=(32,32))
 X = pokemon.getTrainX()
@@ -404,6 +438,7 @@ plt.show()
 
 # Visualiser l'espace latent
 visualize_latent_space_3d(g, z_size=100)
+visualize_latent_space_with_images_2d(g, z_size=100)
 
 for i in range(500):
     if i % 100 == 0:
