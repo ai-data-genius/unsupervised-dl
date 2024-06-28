@@ -13,6 +13,7 @@ from pca.model import PCA
 from Self_Organizing_Maps.model import SOM
 from math import sqrt
 from src.dataset.dataset_pokemon import PokemonData
+from mpl_toolkits.mplot3d import Axes3D
 
 
 if __name__ == '__main__':
@@ -76,86 +77,81 @@ if __name__ == '__main__':
         # X_gen = kmeans.generate(steps=25)
 
     elif model_choice == "pca":
-        dataset_choice = input("Enter the dataset to run ('mnist' or 'toy'): ").strip().lower()
-        if dataset_choice == "toy":
+        X_pca = X_train.reshape(X_train.shape[0], -1)
 
-            # Réduire la dimensionnalité à 2 composantes principales
-            pcap = PCA(n_components=2)
+        optimal_components = PCA.determine_optimal_components(X_pca, variance_threshold=0.95)
+        print(f"Optimal number of components to retain 95% variance: {optimal_components}")
 
-            # Compression des données
-            X_toy_reduced = pcap.compress(X_toy)
+        pcap = PCA(n_components=optimal_components)
 
-            # Décompression des données
-            X_toy_decompressed = pcap.decompress(X_toy_reduced)
+        X_reduced = pcap.compress(X_pca)
+        X_reconstructed = pcap.decompress(X_reduced)
 
-            # Clustering
-            n_clusters = 3
-            clusters_original = pcap.cluster_with_pca_toy(X_toy, n_clusters)
-            clusters_reduced = pcap.cluster_with_pca_toy(X_toy_reduced, n_clusters)
-            clusters_decompressed = pcap.cluster_with_pca_toy(X_toy_decompressed, n_clusters)
+        fig, axes = plt.subplots(2, 10, figsize=(15, 4))
+        fig.suptitle('Images avant et après compression/décompression')
 
-            # Affichage des données avant, après compression et après décompression avec les clusters
-            plt.figure(figsize=(18, 6))
+        for i in range(10):
+            if dataset_choice == 'pokemon':
+                axes[0, i].imshow(np.clip(X_pca[i].reshape(*dataset.image_size, 3) / 255.0, 0, 1))  # Normalize to [0, 1]
+                axes[1, i].imshow(np.clip(X_reconstructed[i].reshape(*dataset.image_size, 3) / 255.0, 0, 1))
+            else:
+                axes[0, i].imshow(X_pca[i].reshape(dataset.image_size), cmap='gray')
+                axes[1, i].imshow(X_reconstructed[i].reshape(dataset.image_size), cmap='gray')
+            axes[0, i].axis('off')
+            axes[1, i].axis('off')
 
-            plt.subplot(1, 3, 1)
-            plt.scatter(X_toy[:, 0], X_toy[:, 1], c=clusters_original, cmap='viridis', alpha=0.6)
-            plt.title('Original toyData with Clusters')
+        plt.show()
 
-            plt.subplot(1, 3, 2)
-            plt.scatter(X_toy_reduced[:, 0], X_toy_reduced[:, 1], c=clusters_reduced, cmap='viridis', alpha=0.6)
-            plt.title('Compressed toyData with Clusters')
+        clusters = pcap.cluster_with_pca(X_reduced, Y_train)
+        pcap.visualize_clusters(X_reduced, clusters)
 
-            plt.subplot(1, 3, 3)
-            plt.scatter(X_toy_decompressed[:, 0], X_toy_decompressed[:, 1], c=clusters_decompressed, cmap='viridis',
-                        alpha=0.6)
-            plt.title('Decompressed toyData with Clusters')
-
+        # Fix plot_sample_images to handle RGB images and ensure valid indices
+        def plot_sample_images(X, clusters, n_clusters=10):
+            fig, axes = plt.subplots(n_clusters, 10, figsize=(15, 15))
+            for cluster in range(n_clusters):
+                cluster_indices = np.where(clusters == cluster)[0]
+                for i, ax in enumerate(axes[cluster]):
+                    if i < len(cluster_indices):
+                        if dataset_choice == 'pokemon':
+                            ax.imshow(np.clip(X[cluster_indices[i]].reshape(*dataset.image_size, 3) / 255.0, 0, 1))
+                        else:
+                            ax.imshow(X[cluster_indices[i]].reshape(dataset.image_size), cmap='gray')
+                    ax.axis('off')
             plt.show()
 
-        elif dataset_choice == "mnist":
-            X_pca = X_train.reshape(X_train.shape[0], -1)  # (60000, 784)
-            # Determine the optimal number of components
-            optimal_components = PCA.determine_optimal_components(X_pca, variance_threshold=0.95)
-            print(f"Optimal number of components to retain 95% variance: {optimal_components}")
+        plot_sample_images(X_reconstructed, clusters, n_clusters=10)
 
-            # Use the optimal number of components for PCA
-            pcap = PCA(n_components=optimal_components)
+        pcap.find_cluster_centers(X_reduced, n_clusters=10)
+        X_generated = pcap.generate_image(n_images=5)
 
-            # Apply PCA and compress data
-            X_reduced = pcap.compress(X_pca)
-
-            # Decompress data
-            X_reconstructed = pcap.decompress(X_reduced)
-
-            # Affichage des images avant et après compression
-            fig, axes = plt.subplots(2, 10, figsize=(15, 4))
-            fig.suptitle('Images avant et après compression/décompression')
-
-            for i in range(10):
-                axes[0, i].imshow(X_pca[i].reshape(28, 28), cmap='gray')
-                axes[0, i].axis('off')
-
-                axes[1, i].imshow(X_reconstructed[i].reshape(28, 28), cmap='gray')
-                axes[1, i].axis('off')
-
-            plt.show()
-
-            # Detect clusters on reduced data
-            clusters = pcap.cluster_with_pca(X_reduced, Y_train)
-
-            # Visualize clusters
-            pcap.visualize_clusters(X_reduced, clusters)
-
-            # Display sample images from each cluster
-            pcap.plot_sample_images(X_reconstructed, clusters, n_clusters=10)
-            # Générer une nouvelle image
-            pcap.find_cluster_centers(X_reduced, n_clusters=10)
-            X_generated = pcap.generate_image(n_images=5)
-            plt.imshow(X_generated[0].reshape(28, 28), cmap='gray')
-            plt.title('Generated Image')
-            plt.show()
+        if dataset_choice == 'pokemon':
+            plt.imshow(np.clip(X_generated[0].reshape(*dataset.image_size, 3) / 255.0, 0, 1))
         else:
-            print("please choose a correct dataset.")
+            plt.imshow(X_generated[0].reshape(dataset.image_size), cmap='gray')
+        plt.title('Generated Image')
+        plt.show()
+
+        # Perform and visualize latent space walk
+        pcap.latent_space_walk(X_pca, Y_train, n_steps=10)
+
+        # Create a new PCA instance for 2D visualization
+        pca_2d = PCA(n_components=2)
+        X_pca_2d = pca_2d.compress(X_pca)
+        pca_2d.visualize_latent_space_distribution(X_pca_2d, Y_train)
+
+        # 3D Visualization
+        pca_3d = PCA(n_components=3)
+        X_pca_3d = pca_3d.compress(X_pca)
+        fig = plt.figure(figsize=(10, 7))
+        ax = fig.add_subplot(111, projection='3d')
+        scatter = ax.scatter(X_pca_3d[:, 0], X_pca_3d[:, 1], X_pca_3d[:, 2], c=Y_train, cmap='viridis')
+        ax.set_title('3D PCA Visualization of Clusters')
+        ax.set_xlabel('PCA Component 1')
+        ax.set_ylabel('PCA Component 2')
+        ax.set_zlabel('PCA Component 3')
+        legend1 = ax.legend(*scatter.legend_elements(), title="Classes")
+        ax.add_artist(legend1)
+        plt.show()
 
     elif model_choice == 'autoencoder':
         dataset_choice = input("Enter the dataset to run ('mnist' or 'pokemon'): ").strip().lower()

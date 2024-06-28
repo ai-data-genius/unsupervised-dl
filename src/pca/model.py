@@ -157,7 +157,28 @@ class PCA:
                 break
             self.cluster_centers_ = new_centers
 
+    def latent_space_walk(self, n_steps=10, n_dimensions=2):
+        if self.components is None or self.mean is None:
+            raise ValueError("PCA must be fitted before performing latent space walk.")
 
+        # Create a grid in the latent space
+        linspace = np.linspace(-3, 3, n_steps)
+        grid = np.meshgrid(*[linspace for _ in range(n_dimensions)])
+        grid_flat = np.column_stack([g.ravel() for g in grid])
 
+        # Pad the grid points if necessary
+        if n_dimensions < self.n_components:
+            grid_flat = np.pad(grid_flat, ((0, 0), (0, self.n_components - n_dimensions)))
 
+        # Generate images from the grid points
+        generated_images = self.decompress(grid_flat)
 
+        # Plot the generated images
+        fig, axes = plt.subplots(n_steps, n_steps, figsize=(15, 15))
+        for i, ax in enumerate(axes.flatten()):
+            ax.imshow(generated_images[i].reshape(28, 28), cmap='viridis')
+            ax.axis('on')
+
+        plt.suptitle('Latent Space Walk')
+        plt.tight_layout()
+        plt.show()
