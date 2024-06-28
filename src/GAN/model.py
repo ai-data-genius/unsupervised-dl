@@ -7,6 +7,8 @@ import math
 import os
 from dataset.dataset_mnist import mnistData
 from dataset.dataset_pokemon import PokemonData
+from sklearn.manifold import TSNE
+import seaborn as sns
 
 
 class Discriminator(Model):
@@ -332,6 +334,25 @@ def load_dataset(dataset_path):
         images.append(img)
     return np.array(images)
 
+def visualize_latent_space(generator, z_size, num_samples=1000):
+    # Générer des vecteurs latents aléatoires
+    z = tf.random.uniform(minval=-1, maxval=1, shape=(num_samples, z_size))
+
+    # Utiliser le générateur pour produire des images à partir des vecteurs latents
+    generated_images = generator(z, training=False).numpy()
+
+    # Appliquer t-SNE pour réduire la dimension des vecteurs latents à 2D
+    tsne = TSNE(n_components=2, perplexity=30, n_iter=300)
+    z_embedded = tsne.fit_transform(z.numpy())
+
+    # Visualiser les vecteurs latents
+    plt.figure(figsize=(12, 10))
+    sns.scatterplot(x=z_embedded[:, 0], y=z_embedded[:, 1])
+    plt.title('t-SNE projection of the latent space')
+    plt.xlabel('t-SNE component 1')
+    plt.ylabel('t-SNE component 2')
+    plt.show()
+
 mnist = mnistData()
 pokemon = PokemonData(image_size=(32,32))
 X = pokemon.getTrainX()
@@ -370,7 +391,7 @@ loss_fn = losses.BinaryCrossentropy(from_logits=True)
 device = '/GPU:0' if tf.config.list_physical_devices('GPU') else '/CPU:0'
 
 # Entraîner le modèle
-n_epochs = 50000
+n_epochs = 500
 d_losses, g_losses = gan.train_mnist_gan(d, g, d_optim, g_optim, loss_fn, dataset, n_epochs, device, verbose=False)
 
 plt.plot(d_losses, label='Discriminator')
@@ -378,6 +399,9 @@ plt.plot(g_losses, label='Generator')
 plt.legend()
 plt.show()
 
-for i in range(50000):
-    if i % 10000 == 0:
+# Visualiser l'espace latent
+visualize_latent_space(g, z_size=100)
+
+for i in range(500):
+    if i % 100 == 0:
         show_generated_images_pok(epoch=i, n_cols=8)
