@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
 from tqdm import tqdm
 from sklearn.cluster import KMeans
 
@@ -24,9 +23,6 @@ class KMeans:
         centroids_old = np.zeros_like(centroids)
 
         for iteration in tqdm(range(self.max_iter), desc="Lloyd's Algorithm Progress"):
-            # if np.linalg.norm(centroids - centroids_old) <= tol:
-            #     break
-
             centroids_old = centroids.copy()
             membership = np.array(
                 list(map(lambda i: np.argmin(np.linalg.norm(X_flat[i] - centroids, axis=1)), range(n_samples))))
@@ -50,27 +46,28 @@ class KMeans:
         plt.show()
 
     def projection_2d(self: "KMeans", X, Y):
-        #plot the a histogram the number or percentage of each class in each cluster
+        # Plot a histogram of the number or percentage of each class in each cluster
         n_samples = X.shape[0]
         n_classes = len(np.unique(Y))
         n_clusters = self.n_clusters
         membership = self.membership
 
-        #initialize the histogram
+        # Initialize the histogram
         hist = np.zeros((n_clusters, n_classes))
 
         for i in range(n_samples):
             hist[int(membership[i]), int(Y[i])] += 1
 
-        #normalize the histogram
+        # Normalize the histogram
         hist = hist / np.sum(hist, axis=1)[:, None]
 
-        #plot the histogram
+        # Plot the histogram
         for i in range(0, self.n_clusters, 10):
             fig, ax = plt.subplots(1, 10, figsize=(20, 5))
             for j in range(10):
                 if i + j < n_clusters:  # Ensure we don't go out of bounds
                     ax[j].bar(np.arange(n_classes), hist[i + j])
+                    ax[j].set_ylim(0, 1)  # Set y-axis limits
                     ax[j].set_title('Cluster %d' % (i + j))
                     ax[j].set_xticks(np.arange(n_classes))
                     ax[j].set_xticklabels(np.arange(n_classes))
@@ -79,7 +76,7 @@ class KMeans:
             plt.tight_layout()
             plt.show()
 
-        #plot the centroids
+        # Plot the centroids
         for i in range(0, self.n_clusters, 10):
             fig, ax = plt.subplots(1, 10, figsize=(20, 5))
             for j in range(10):
@@ -91,7 +88,6 @@ class KMeans:
                     ax[j].axis('off')  # Turn off the axis if there is no cluster to display
             plt.tight_layout()
             plt.show()
-
 
     def compress(self: "KMeans", image):
         image_flat = image.reshape(-1)
@@ -105,13 +101,8 @@ class KMeans:
             raise ValueError("Centroids are not initialized. Run the lloyd method first.")
 
         centroid = self.centroids[id_cluster]
-        centroid = centroid * 255.0
-        decompressed_image = centroid.reshape(28, 28)
-
-        plt.imshow(decompressed_image, cmap='gray')
-        plt.axis('off')
-        plt.show()
-
+        decompressed_image = centroid.reshape(32, 32, 3)
+        return decompressed_image
 
     def generate(self: "KMeans", steps: int = 10):
         if self.centroids is None:

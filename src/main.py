@@ -37,7 +37,7 @@ if __name__ == '__main__':
         dataset_choice = input("Enter the dataset to run ('mnist' or 'toy' or 'pokemon'): ").strip().lower()
 
         if dataset_choice == "mnist":
-            kmeans = KMeans(20, max_iter=10)
+            kmeans = KMeans(100, max_iter=20)
             kmeans.lloyd(X_train)
             kmeans.projection(X=X_train, Y=Y_train)
 
@@ -52,13 +52,12 @@ if __name__ == '__main__':
             X_test = pokemon_dataset.getTestX()
             Y_test = pokemon_dataset.getTestY()
 
-            kmeans = KMeans(100, max_iter=1000)
+            kmeans = KMeans(400, max_iter=100)
 
             # Train the KMeans model
             kmeans.lloyd(X_train, tol=1e-7)
-            print("hello")
 
-            kmeans.projection(X=X_train, Y=Y_train)
+            #kmeans.projection(X=X_train, Y=Y_train)
 
             kmeans.save_weights()
 

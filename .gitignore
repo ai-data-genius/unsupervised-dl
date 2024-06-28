@@ -4,3 +4,5 @@
 *.pyc
 *.h5
 *.keras
+*.npy
+*.png

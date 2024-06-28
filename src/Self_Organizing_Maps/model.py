@@ -64,3 +64,4 @@ class SOM:
         for data in compressed_data:
             decompressed_data.append(self.weights[data[0], data[1]])
         return decompressed_data
+
