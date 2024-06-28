@@ -197,12 +197,12 @@ if __name__ == '__main__':
         elif "pokemon" == dataset_choice:
             vae = VAEPokemon(3, 32*32*3, 32*32*3)
             vae.build_model()
-            X_vae_train, X_vae_test = vae.normalize(X_train.copy(), X_test.copy())
+            X_vae_train, X_vae_test = vae.normalize(X_train_pokemon.copy(), X_test_pokemon.copy())
             print(X_vae_train.shape)
             vae.fit(X_vae_train, X_vae_train, 50_000, 512)
             predict_results = vae.compression(X_vae_train)
             vae.projection_image(X_vae_train, vae.decrompression(predict_results), size=32)
-            vae.projection_3d(predict_results, Y_train)
+            vae.projection_3d(predict_results, Y_train_pokemon)
             vae.generation(size=32, n=15, linsize=30)
 
     elif model_choice == 'som':
