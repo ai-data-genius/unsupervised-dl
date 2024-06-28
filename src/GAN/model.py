@@ -12,19 +12,13 @@ from dataset.dataset_pokemon import PokemonData
 class Discriminator(Model):
     def __init__(self, in_features, out_features):
         super(Discriminator, self).__init__()
-        self.fc1 = layers.Dense(1024, input_shape=(in_features,))
+        self.fc1 = layers.Dense(128)
         self.leaky_relu1 = layers.LeakyReLU(alpha=0.2)
-        self.fc2 = layers.Dense(512)
+        self.fc2 = layers.Dense(64)
         self.leaky_relu2 = layers.LeakyReLU(alpha=0.2)
-        self.fc3 = layers.Dense(256)
+        self.fc3 = layers.Dense(32)
         self.leaky_relu3 = layers.LeakyReLU(alpha=0.2)
-        self.fc4 = layers.Dense(128)
-        self.leaky_relu4 = layers.LeakyReLU(alpha=0.2)
-        self.fc5 = layers.Dense(64)
-        self.leaky_relu5 = layers.LeakyReLU(alpha=0.2)
-        self.fc6 = layers.Dense(32)
-        self.leaky_relu6 = layers.LeakyReLU(alpha=0.2)
-        self.fc7 = layers.Dense(out_features)
+        self.fc4 = layers.Dense(out_features)
         self.dropout = layers.Dropout(0.3)
 
     def call(self, x, training=False):
@@ -39,39 +33,37 @@ class Discriminator(Model):
         x = self.leaky_relu3(x)
         x = self.dropout(x, training=training)
         x = self.fc4(x)
-        x = self.leaky_relu4(x)
-        x = self.dropout(x, training=training)
-        x = self.fc5(x)
-        x = self.leaky_relu5(x)
-        x = self.dropout(x, training=training)
-        x = self.fc6(x)
-        x = self.leaky_relu6(x)
-        x = self.dropout(x, training=training)
-        x = self.fc7(x)
         return x
 class Generator(Model):
     def __init__(self, in_features, out_features, z_size):
         super(Generator, self).__init__()
         self.z_size = z_size
-        self.fc1 = layers.Dense(1024, input_shape=(self.z_size,))
+        self.fc1 = layers.Dense(32, input_shape=(self.z_size,))
         self.relu1 = layers.LeakyReLU(alpha=0.2)
-        self.fc2 = layers.Dense(2048)
+        self.fc2 = layers.Dense(64)
         self.relu2 = layers.LeakyReLU(alpha=0.2)
-        self.fc3 = layers.Dense(4096)
+        self.fc3 = layers.Dense(128)
         self.relu3 = layers.LeakyReLU(alpha=0.2)
-        self.fc4 = layers.Dense(out_features, activation='tanh')  # Output layer with tanh activation
+        self.fc4 = layers.Dense(out_features)
+        self.dropout = layers.Dropout(0.3)
+        self.tanh = layers.Dense(32 * 32 * 3, activation='tanh')
+        self.bn = layers.BatchNormalization()
 
     def call(self, x, training=True):
         x = self.fc1(x)
         x = self.relu1(x)
+        x = self.dropout(x, training=training)
         x = self.fc2(x)
         x = self.relu2(x)
+        x = self.dropout(x, training=training)
         x = self.fc3(x)
         x = self.relu3(x)
+        x = self.dropout(x, training=training)
         x = self.fc4(x)
-        img = tf.reshape(x, (-1, 32, 32, 3))  # Reshape to (batch_size, 32, 32, 3)
+        x = self.bn(x, training=training)
+        x = self.tanh(x)
+        img = tf.reshape(x, (-1, 32, 32, 3))
         return img
-
 
 class DiscriminatorConv(Model):
     def __init__(self):
@@ -378,7 +370,7 @@ loss_fn = losses.BinaryCrossentropy(from_logits=True)
 device = '/GPU:0' if tf.config.list_physical_devices('GPU') else '/CPU:0'
 
 # Entraîner le modèle
-n_epochs = 10000
+n_epochs = 50000
 d_losses, g_losses = gan.train_mnist_gan(d, g, d_optim, g_optim, loss_fn, dataset, n_epochs, device, verbose=False)
 
 plt.plot(d_losses, label='Discriminator')
@@ -386,6 +378,6 @@ plt.plot(g_losses, label='Generator')
 plt.legend()
 plt.show()
 
-for i in range(10000):
-    if i % 1000 == 0:
+for i in range(50000):
+    if i % 10000 == 0:
         show_generated_images_pok(epoch=i, n_cols=8)
